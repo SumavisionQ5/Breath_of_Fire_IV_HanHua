@@ -1,0 +1,7 @@
+{
+  "original_size": 697838400,
+  "original_sha256": "bf0b2a0d73f64eee32756b8b7932ae152b5204437c14e196427305c6209fdf2b",
+  "patched_sha256": "cd248ac44391d121d22bd0b67669fc5e87eb2b1de6a32381face87c29bf1fb47",
+  "diff_count": 48192,
+  "total_diff_bytes": 986614
+}
