@@ -5,6 +5,11 @@ bof4lib.py — 龙战士4 (Breath of Fire IV) 汉化工具共享库
 提供 ISO 9660 BIN/CUE 镜像读写、EMI 文件解析、
 文本段检测、字体格式处理等通用功能。
 
+遵循《龙战士4汉化改进》建议:
+  - 建议6: 未知字符禁止静默变 0x12 0x00, 必须 raise ValueError
+  - 建议7: 拆出 encode_char() 单一字符编码函数
+  - 建议14/15: build_text_segment() 使用 ID 精确匹配, 缺失即报错
+
 作者: TeleAgent 龙战士4汉化项目
 许可: MIT License
 """
@@ -20,6 +25,154 @@ SEC = 2352      # 扇区字节数 (Mode 2 raw)
 DOFF = 24       # 数据偏移 (跳过扇区头)
 DSZ = 2048      # 每扇区数据大小
 EMI_MAGIC = b"MATH_TBL"  # EMI 文件标识
+
+# 主字库/小字库/场景字库容量常量 (建议5: 不再写死)
+MAIN_FONT_COUNT = 349      # 全局主字库字模数
+SMALL_FONT_COUNT = 205     # 全局小字库字模数
+SCENE_FONT_MAX = 97        # 每场景最大字模数
+SCENE_FONT_BASE = 349      # 场景字库起始索引
+GLYPH_SIZE = 72            # 每字模字节数 (12x12 4bpp)
+FONT_SEG_SIG = 0x1C000200  # 字库段标识
+
+# 字库段像素布局 (21 列网格, 已经 VRAM 转储逐字节比对 + 字形渲染双重验证):
+#   VRAM 中字库区宽 256px = 21 列 x 12px (每列 6 字节, 21*6 = 126 字节)
+#   glyph i 位于 col = i % 21, row = i // 21, 尺寸 12x12 像素
+#   VRAM 每行步进 2048 字节; 段文件每 2048 字节块在 VRAM 中占 32 行 x 64 字节,
+#   相邻两块并排 (左块字节列 0-63 / 右块 64-127), 故段内偏移须经 _vram_to_seg 换算。
+#   nibble 顺序: 高 nibble 在前 (每字节 2 像素, 高位 = 左侧像素)
+#
+#   历史说明: 早期版本误按 "64B/行 x 10 glyph 带" 实现, 导致字模写入错位,
+#   游戏中表现为字形碎片/乱码。已由 xcheck 系列实验证伪并改为 21 列布局。
+FONT_GRID_COLS = 21         # 字库网格列数
+FONT_CELL_PX = 12           # 字形像素尺寸 (12x12)
+FONT_CELL_ROW_BYTES = 6     # 字形每行字节数 (12px @ 4bpp)
+FONT_CELL_ROWS = 12         # 字形行数
+FONT_BLOCK_BYTES = 2048     # VRAM 单次上传块大小
+FONT_BLOCK_COL_BYTES = 64   # 单块在 VRAM 中的行宽 (字节)
+FONT_BLOCK_ROWS = 32        # 单块在 VRAM 中的行数
+
+# 兼容别名 (旧调用方仍可用)
+FONT_ROW_BYTES = FONT_BLOCK_COL_BYTES
+FONT_GLYPHS_PER_ROW = FONT_GRID_COLS
+FONT_GLYPH_ROW_BYTES = FONT_CELL_ROW_BYTES
+FONT_BAND_ROWS = FONT_CELL_ROWS
+FONT_BAND_BYTES = FONT_CELL_ROWS * FONT_BLOCK_COL_BYTES
+
+
+def _vram_to_seg(row, col_byte):
+    """VRAM 字库区坐标 -> 段内字节偏移。
+
+    Args:
+        row: int, VRAM 行号 (相对字库区顶部)
+        col_byte: int, 行内字节列 (0-127); 0-63 属左块, 64-127 属右块
+
+    Returns:
+        int: 段内字节偏移
+    """
+    blk = 2 * (row // FONT_BLOCK_ROWS) + (1 if col_byte >= FONT_BLOCK_COL_BYTES else 0)
+    seg_row = blk * FONT_BLOCK_ROWS + (row % FONT_BLOCK_ROWS)
+    return seg_row * FONT_BLOCK_COL_BYTES + (col_byte % FONT_BLOCK_COL_BYTES)
+
+
+def glyph_cell(i):
+    """glyph i 左上角在 VRAM 字库区中的 (row, col_byte)。"""
+    return (i // FONT_GRID_COLS) * FONT_CELL_ROWS, (i % FONT_GRID_COLS) * FONT_CELL_ROW_BYTES
+
+
+def glyph_offset(i):
+    """glyph i 首行起始的段内字节偏移 (21 列布局)。"""
+    r, c = glyph_cell(i)
+    return _vram_to_seg(r, c)
+
+
+def glyph_capacity(seg_size):
+    """给定字库段字节数, 返回能完整容纳的 glyph 数。
+
+    Args:
+        seg_size: int, 字库段数据字节数
+
+    Returns:
+        int: 可容纳的 glyph 上限 (索引 0 .. n-1)
+    """
+    n = 0
+    while n < 4096:
+        r0, c0 = glyph_cell(n)
+        ok = True
+        for rr in range(FONT_CELL_ROWS):
+            for k in range(FONT_CELL_ROW_BYTES):
+                if _vram_to_seg(r0 + rr, c0 + k) >= seg_size:
+                    ok = False
+                    break
+            if not ok:
+                break
+        if not ok:
+            return n
+        n += 1
+    return n
+
+
+def glyph_seg_size(total_slots, align=FONT_BLOCK_BYTES):
+    """容纳 total_slots 个 glyph 所需的字库段字节数 (向上对齐)。
+
+    Args:
+        total_slots: int, 需要的 glyph 槽数
+        align: int, 对齐字节数 (默认 2048)
+
+    Returns:
+        int: 段字节数
+    """
+    if total_slots <= 0:
+        return 0
+    r0, c0 = glyph_cell(total_slots - 1)
+    need = 0
+    for rr in range(FONT_CELL_ROWS):
+        for k in range(FONT_CELL_ROW_BYTES):
+            off = _vram_to_seg(r0 + rr, c0 + k)
+            if off + 1 > need:
+                need = off + 1
+    return ((need + align - 1) // align) * align
+
+
+def get_glyph(seg_data, i):
+    """按 21 列布局提取 glyph i 的 72 字节 (12 行 x 6 字节)。
+
+    Args:
+        seg_data: bytes, 字库段数据
+        i: int, glyph 索引
+
+    Returns:
+        bytes: 72 字节字形数据 (行优先)
+    """
+    r0, c0 = glyph_cell(i)
+    n = len(seg_data)
+    out = bytearray()
+    for r in range(FONT_CELL_ROWS):
+        for k in range(FONT_CELL_ROW_BYTES):
+            off = _vram_to_seg(r0 + r, c0 + k)
+            out.append(seg_data[off] if 0 <= off < n else 0)
+    return bytes(out)
+
+
+def set_glyph(seg_data, i, glyph):
+    """按 21 列布局把 72 字节 glyph 写回字库段。
+
+    Args:
+        seg_data: bytearray, 字库段数据 (可修改)
+        i: int, glyph 索引
+        glyph: bytes, 72 字节字形数据
+
+    Raises:
+        ValueError: glyph 长度不是 GLYPH_SIZE
+    """
+    if len(glyph) != GLYPH_SIZE:
+        raise ValueError("Bad glyph size: %d (expected %d)" % (len(glyph), GLYPH_SIZE))
+    r0, c0 = glyph_cell(i)
+    n = len(seg_data)
+    for r in range(FONT_CELL_ROWS):
+        for k in range(FONT_CELL_ROW_BYTES):
+            off = _vram_to_seg(r0 + r, c0 + k)
+            if 0 <= off < n:
+                seg_data[off] = glyph[r * FONT_CELL_ROW_BYTES + k]
 
 # 控制码名称 → 字节前缀
 CTRL_CODES = {
@@ -193,6 +346,23 @@ def parse_emi(buf):
     return {"count": cnt, "segments": segments, "total_size": sec_offset}
 
 
+def find_font_segments(parsed):
+    """返回所有 sig == 0x1C000200 的段 (字体段)。
+
+    建议9: 不要依赖 seg["index"] == 7,
+    应该按 sig (VRAM/load target) 定位字体段。
+
+    Args:
+        parsed: dict, parse_emi() 的返回结果
+
+    Returns:
+        list of segment dicts
+    """
+    if parsed is None:
+        return []
+    return [seg for seg in parsed["segments"] if seg["sig"] == FONT_SEG_SIG]
+
+
 def is_text_segment(seg_data):
     """检测 EMI 段是否为文本段。
 
@@ -253,35 +423,92 @@ def trim(raw):
 
 
 # ============================================================
-# 文本编码/解码
+# 文本编码 (建议 6/7: encode_char + 严格报错)
 # ============================================================
 
-def encode_text(tgt, fname, alloc):
-    """将中文翻译文本编码为游戏字节序列。
+def encode_char(ch, fname, alloc, position=None):
+    """将单个字符编码为游戏字节序列 (建议 7)。
 
-    编码规则:
-      - 全局主字库索引 0-255: 0x12 XX
-      - 全局主字库索引 256-348: 0x13 XX (XX=索引-256)
-      - 场景字索引 349+: 0x13 XX
-      - 全局小字库扩展: 0x15 XX
-      - 小字库固有位置: 直接字节 (0x20-0x7E)
-      - 控制码 {xxx}: 转换为原始字节序列
-      - \\n: 0x01, ---: 0x02
+    查找优先级:
+        1. 全局主字库 global_main (0-348)
+        2. 场景字库 scene[fname] (349+)
+        3. 全局小字库 global_small (0x15 XX)
+        4. 小字库固有位置 small_font_inherent
+        5. ASCII (0x20-0x7E)
 
     Args:
-        tgt: str, 翻译后的文本
-        fname: str, EMI 文件名 (用于查找场景字库)
+        ch: str, 要编码的字符
+        fname: str, EMI 文件名 (用于场景字库)
         alloc: dict, 字库分配方案 (font_alloc.json)
+        position: int, 在原文中的位置 (用于错误信息)
 
     Returns:
         bytes: 编码后的字节序列
-    """
-    gm = alloc["global_main"]
-    gs = alloc["global_small"]
-    si = alloc.get("small_font_inherent", {})
-    sa = alloc["scene"]
-    scene_map = sa.get(fname, {})
 
+    Raises:
+        ValueError: 字符无法映射到任何字库 (建议6: 禁止静默)
+    """
+    gm = alloc.get("global_main", {})
+    gs = alloc.get("global_small", {})
+    si = alloc.get("small_font_inherent", {})
+    scene_map = alloc.get("scene", {}).get(fname, {})
+
+    # 1. 全局主字库 (0-255 → 0x12, 256-348 → 0x13)
+    if ch in gm:
+        idx = int(gm[ch])
+        if idx < 256:
+            return bytes((0x12, idx))
+        return bytes((0x13, idx - 256))
+
+    # 2. 场景字库 (349+ → 0x13; 上限 511 由 0x13 XX 单字节编码决定, v2 实际用 128)
+    if ch in scene_map:
+        idx = int(scene_map[ch])
+        if SCENE_FONT_BASE <= idx <= 0x1FF:
+            return bytes((0x13, idx - 256))
+
+    # 3. 全局小字库扩展 (0-204 → 0x15 idx+1)
+    if ch in gs:
+        idx = int(gs[ch])
+        return bytes((0x15, idx + 1))
+
+    # 4. 小字库固有位置 (直接字节 0x20-0x7E 或 0x15)
+    if ch in si:
+        idx = int(si[ch])
+        if 0x20 <= idx + 0x20 <= 0x7E:
+            return bytes((idx + 0x20,))
+        return bytes((0x15, idx))
+
+    # 5. ASCII
+    cp = ord(ch)
+    if 0x20 <= cp <= 0x7E:
+        return bytes((cp,))
+
+    # 建议6: 禁止静默变成 0x12 0x00
+    pos_str = position if position is not None else '?'
+    raise ValueError(
+        "Unmapped character %r in %s at position %s "
+        "(not in global_main/global_small/scene/ascii)" %
+        (ch, fname, pos_str)
+    )
+
+
+def encode_text(tgt, fname, alloc):
+    """将中文翻译文本编码为游戏字节序列 (建议 7)。
+
+    控制码 {框06} / {立绘0101} / {引2 5A40} 等原样转换为原始字节；
+    \\n → 0x01, --- → 0x02；其余字符逐个经 encode_char() 编码。
+
+    Args:
+        tgt: str, 翻译后的文本
+        fname: str, EMI 文件名
+        alloc: dict, 字库分配方案
+
+    Returns:
+        bytes: 编码后的字节序列
+
+    Raises:
+        ValueError: 遇到无法映射的字符
+    """
     result = bytearray()
     i = 0
 
@@ -295,6 +522,7 @@ def encode_text(tgt, fname, alloc):
                 code_str = tgt[i + 1:j]
                 matched = False
 
+                # 带空格的控制码 (如 "引2 5A40")
                 if ' ' in code_str:
                     parts = code_str.split(' ', 1)
                     name = parts[0]
@@ -309,10 +537,12 @@ def encode_text(tgt, fname, alloc):
                         matched = True
 
                 if not matched:
+                    # 纯名称控制码
                     if code_str in CTRL_CODES:
                         result.append(CTRL_CODES[code_str])
                         matched = True
 
+                    # 前缀名+数字
                     if not matched:
                         for name in sorted(CTRL_CODES.keys(), key=len, reverse=True):
                             if code_str.startswith(name):
@@ -323,14 +553,15 @@ def encode_text(tgt, fname, alloc):
                                         hex_str = param_str[k:k + 2]
                                         try:
                                             result.append(int(hex_str, 16))
-                                        except:
+                                        except ValueError:
                                             result.append(ord(param_str[k]) if k < len(param_str) else 0)
                                 matched = True
                                 break
 
                 if not matched:
-                    for c in tgt[i:j + 1]:
-                        result.append(ord(c) if ord(c) < 256 else 0x3F)
+                    # 未知控制码 → 逐字编码 (普通文本)
+                    for k2 in range(i, j + 1):
+                        result.extend(encode_char(tgt[k2], fname, alloc, k2))
 
                 i = j + 1
                 continue
@@ -353,79 +584,45 @@ def encode_text(tgt, fname, alloc):
             i += 1
             continue
 
-        # ---- 字库映射 ----
-        encoded = False
-
-        # 场景字库
-        if ch in scene_map:
-            idx = scene_map[ch]
-            if 349 <= idx <= 445:
-                result.append(0x13)
-                result.append(idx - 256)
-                encoded = True
-
-        # 全局主字库
-        if not encoded and ch in gm:
-            idx = gm[ch]
-            if idx < 256:
-                result.append(0x12)
-                result.append(idx)
-            else:
-                result.append(0x13)
-                result.append(idx - 256)
-            encoded = True
-
-        # 全局小字库扩展
-        if not encoded and ch in gs:
-            idx = gs[ch]
-            result.append(0x15)
-            result.append(idx + 1)
-            encoded = True
-
-        # 小字库固有位置
-        if not encoded and ch in si:
-            idx = si[ch]
-            if 0x20 <= idx + 0x20 <= 0x7E:
-                result.append(idx + 0x20)
-            else:
-                result.append(0x15)
-                result.append(idx)
-            encoded = True
-
-        # ASCII
-        if not encoded:
-            cp = ord(ch)
-            if 0x20 <= cp <= 0x7E:
-                result.append(cp)
-                encoded = True
-
-        if not encoded:
-            result.append(0x12)
-            result.append(0)
-
+        # ---- 普通字符 ----
+        result.extend(encode_char(ch, fname, alloc, i))
         i += 1
 
     return bytes(result)
 
 
-def build_text_segment(orig_seg_data, vals, encoded_texts):
+# ============================================================
+# 文本段构建 (建议 14/15: ID 精确匹配)
+# ============================================================
+
+def build_text_segment(orig_seg_data, vals, encoded_list):
     """用编码文本构建新的文本段。
 
-    使用与提取脚本相同的 trim() 逻辑精确映射
-    编码文本到原始字符串位置。空字符串保持为空。
+    遍历逻辑与导出脚本严格对称:
+      - 空槽 (e <= s) → b'\x00', 不消耗编码列表
+      - 空字符串 (trim 后为空) → b'\x00', 不消耗
+      - 非空字符串 → 按序消耗 encoded_list 的下一项 (导出顺序 = 工作簿顺序)
+
+    匹配方式说明 (建议14/15 的落地):
+      工作簿的 id 是全局编号 (非段内序号), 且导出时跳过空槽/空串,
+      因此可靠的匹配是"非空字符串顺序 ↔ 编码列表顺序";
+      列表耗尽或剩余时立即报错, 禁止静默错位。
 
     Args:
         orig_seg_data: bytes, 原始段数据
         vals: tuple, 原始指针表
-        encoded_texts: list of dict, 该段的编码文本列表
+        encoded_list: list[str], 按 (file, seg) 分组且保持工作簿顺序的 encoded_hex 列表
 
     Returns:
         bytes: 新的段数据 (指针表 + 文本数据)
+
+    Raises:
+        ValueError: 编码列表耗尽 (非空字符串多于翻译条目)
     """
     n = len(vals)
     ptsize = n * 2
-    enc_idx = 0
     new_strings = []
+    enc_idx = 0
 
     for k in range(n):
         s = vals[k]
@@ -441,19 +638,34 @@ def build_text_segment(orig_seg_data, vals, encoded_texts):
             new_strings.append(b'\x00')
             continue
 
-        if enc_idx < len(encoded_texts):
-            enc_hex = encoded_texts[enc_idx]["encoded_hex"]
-            enc_idx += 1
-            if enc_hex:
-                raw_enc = bytes.fromhex(enc_hex)
-                if not raw_enc or raw_enc[-1] != 0x00:
-                    raw_enc = raw_enc + b'\x00'
-                new_strings.append(raw_enc)
-            else:
-                new_strings.append(b'\x00')
-        else:
-            new_strings.append(b'\x00')
+        # 非空字符串: 顺序消耗编码列表, 耗尽即报错 (禁止静默)
+        if enc_idx >= len(encoded_list):
+            raise ValueError(
+                "Missing translation: text entry %d (segment-local) is non-empty "
+                "but encoded list exhausted at %d" % (k, enc_idx)
+            )
 
+        enc_hex = encoded_list[enc_idx]
+        enc_idx += 1
+
+        if not enc_hex:
+            # 翻译为空 → 保持空字符串
+            new_strings.append(b'\x00')
+            continue
+
+        raw_enc = bytes.fromhex(enc_hex)
+        if not raw_enc or raw_enc[-1] != 0x00:
+            raw_enc = raw_enc + b'\x00'
+        new_strings.append(raw_enc)
+
+    # 防御: 编码列表未耗尽 (翻译条目多于非空字符串) → 报错
+    if enc_idx != len(encoded_list):
+        raise ValueError(
+            "Encoded list not fully consumed: %d used / %d provided "
+            "(导出顺序与工作簿不一致?)" % (enc_idx, len(encoded_list))
+        )
+
+    # 重建指针表
     pointers = []
     data_offset = ptsize
     for sdata in new_strings:
@@ -466,3 +678,18 @@ def build_text_segment(orig_seg_data, vals, encoded_texts):
         seg.extend(sdata)
 
     return bytes(seg)
+
+
+def build_encoded_map(encoded_texts):
+    """把编码文本列表转为按顺序排列的 encoded_hex 列表。
+
+    工作簿条目在 (file, seg) 分组内保持导出顺序,
+    与原始段的非空字符串顺序一一对应。
+
+    Args:
+        encoded_texts: list of dict, 含 'encoded_hex' 字段
+
+    Returns:
+        list[str]: encoded_hex 列表 (顺序即匹配顺序)
+    """
+    return [et.get("encoded_hex", "") for et in encoded_texts]

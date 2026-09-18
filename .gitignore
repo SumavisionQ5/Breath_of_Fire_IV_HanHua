@@ -25,3 +25,13 @@ desktop.ini
 .idea/
 *.swp
 *.swo
+
+# Backups / intermediate artifacts
+*.bak
+*.pre_backfill.bak
+*.log
+font_dump/
+.temp/
+
+# Reports (regeneratable)
+bof4_audit_report.html

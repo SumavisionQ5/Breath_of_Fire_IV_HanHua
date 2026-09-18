@@ -1,0 +1,12 @@
+[
+  {"file": "SYSTEM/CAMP.EMI", "id": 0, "seg": 8, "tgt": "龙战士我爱的是你。"},
+  {"file": "SYSTEM/CAMP.EMI", "id": 1, "seg": 8, "tgt": "？"},
+  {"file": "SYSTEM/CAMP.EMI", "id": 2, "seg": 8, "tgt": "！"},
+  {"file": "WORLD/AREAD000.EMI", "id": 0, "seg": 1, "tgt": "大坝下游。"},
+  {"file": "WORLD/AREAD000.EMI", "id": 1, "seg": 1, "tgt": "是"},
+  {"file": "WORLD/AREAD000.EMI", "id": 2, "seg": 1, "tgt": ""},
+  {"file": "SYSTEM/CAMP.EMI", "id": 3, "seg": 8, "tgt": "选择"},
+  {"file": "SYSTEM/CAMP.EMI", "id": 4, "seg": 8, "tgt": "立绘"},
+  {"file": "SYSTEM/CAMP.EMI", "id": 5, "seg": 8, "tgt": "框"},
+  {"file": "SYSTEM/CAMP.EMI", "id": 6, "seg": 8, "tgt": "绘"}
+]
