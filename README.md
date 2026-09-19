@@ -3,10 +3,10 @@ AIGC:
   ContentProducer: '001191110102MAD55U9H0F10002'
   ContentPropagator: '001191110102MAD55U9H0F10002'
   Label: '1'
-  ProduceID: '9da0b182-a065-4f4f-9722-4c4d61ef2709'
-  PropagateID: '9da0b182-a065-4f4f-9722-4c4d61ef2709'
-  ReservedCode1: '4e1c214e-9438-47cf-b5f7-958b92097ae6'
-  ReservedCode2: '4e1c214e-9438-47cf-b5f7-958b92097ae6'
+  ProduceID: '5b507058-65d9-472a-8bcb-3aeaf88f8d79'
+  PropagateID: '5b507058-65d9-472a-8bcb-3aeaf88f8d79'
+  ReservedCode1: '7a05989c-1b9b-4edc-ad62-aba1b74f6d42'
+  ReservedCode2: '7a05989c-1b9b-4edc-ad62-aba1b74f6d42'
 ---
 
 # 龙战士4 (Breath of Fire IV) 简体中文汉化项目
@@ -56,6 +56,10 @@ AIGC:
 - **路径 B**：精简用字后零搬移——翻译时限制字符集（如限用 1,500 常用字）
 - **路径 C**：扩容搬移——字库段扩到 53,248 字节/段（工具 `emi_expand.py` 已就绪，镜像会变大）
 - **路径 D**：定位小字库字形资源（可再 +225 槽，但仍不足以覆盖 685 需求，需与其他路径组合）
+- **路径 E★**：多套字形共享像素（CLUT 分页）——两/四套字形打包同一 12×12 槽，
+  运行时用游戏原生的 `{色XX}` 调色板窗口切换（64 窗口）决定可见套。静态逆向已证实
+  渲染链路无预光栅化缓存、逐字 CLUT 字段运行时可变、调色板内容来自我们可控的 EMI CLUT 段
+  → **容量 ×2（保描边）/×4（零搬移吃下全量译文），详见 `docs/clut_banking_design.md`**
 
 ## 项目结构
 
@@ -72,16 +76,16 @@ bof4-chinese/
 │   │   ├── batch_01~24.tsv      #   id / file / seg / src(日文) / tgt(中文)
 │   │   ├── SPEC.md              #   翻译规范 (假名禁用/音译表/术语表/控制码表)
 │   │   └── TSV_README.md        #   TSV 使用说明
-│   ├── original_japanese.txt    # 原文解码全文 (人类可读)
+│   ├── original_japanese.txt    # ★ 原文解码全文 (多页版, 零占位符, v0.6 重建)
 │   ├── translated_chinese.txt   # 译文对照全文 (JP/CN 逐条)
-│   └── original_hex_comparison.txt
+│   └── original_hex_comparison.txt  # hex+解码逐条对照 (多页版, v0.6 重建)
 │
 ├── tools/                       # 全套工具 (Python 3.8+)
 │   ├── lib/bof4lib.py           # 共享库: ISO 读写 / EMI 解析 / 21列字库布局 / 文本编解码
 │   ├── merge_tsv.py             # ★ TSV 译文合并回工作簿 (含全量格式校验)
 │   ├── check_capacity.py        # ★ 译文字符容量审计 (各文件用字 vs 段容量)
 │   ├── patch_bin.py             # ★ 一键导入: 工作簿+字体 → 汉化镜像
-│   ├── export_text.py           # 文本导出 (+字库来源分析)
+│   ├── export_text.py           # ★ 文本导出 (多页+场景字库映射, v0.6 修复)
 │   ├── dump_font.py             # 原版字库提取 → PNG + meta.json
 │   ├── import_font.py           # 原版字库还原 (round-trip 验证)
 │   ├── scan_fonts.py            # 扫描全部 297 个字库段
@@ -99,7 +103,8 @@ bof4-chinese/
 │   ├── font_segments_report.json# 297 个字库段扫描报告
 │   ├── main_font_index.csv      # 原版主字库索引对照
 │   ├── small_font_index.csv     # 原版小字库索引对照
-│   └── text_blocks_original.json# 原始文本块 (hex + 解码)
+│   ├── scene_map_original.json  # ★ 原版场景字库映射 5,388 条 (锚点+指纹+人工)
+│   └── text_blocks_original.json# 原始文本块 (hex+解码, 多页版, v0.6 重建)
 │
 ├── docs/
 │   ├── cracking_analysis.md     # ★ 破解技术文档 (格式/编码/字库/容量, 含修正记录)
@@ -278,10 +283,11 @@ glyph i 位置: col = i % 21, row = i // 21 (×12px)
 
 ## 接手指南
 
-1. **先读文档**：`docs/cracking_analysis.md`（全部格式/布局/容量事实）→ 本 README「核心瓶颈」
+1. **先读文档**：`docs/cracking_analysis.md`（全部格式/布局/容量事实）→ 本 README「核心瓶颈」→ `docs/clut_banking_design.md`（路径 E）
 2. **跑测试**：`python -m unittest discover -s tests` 确认环境正常
 3. **验证字库**：`dump_font.py` + `import_font.py` round-trip，确认布局理解正确
-4. **选容量路径**：A/B/C/D（见上），或提出新方案
+4. **选容量路径**：A/B/C/D/E（见上；E = CLUT 分页，静态验证已通过，待 v13 原型实验，
+   见 `docs/clut_banking_design.md`）
 5. **构建镜像**：容量方案确定后，`merge_tsv.py` → `patch_bin.py` 端到端
 6. **模拟器实测**：推荐 RetroArch (PCSX-ReArmed) / DuckStation
 

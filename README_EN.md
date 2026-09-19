@@ -3,10 +3,10 @@ AIGC:
   ContentProducer: '001191110102MAD55U9H0F10002'
   ContentPropagator: '001191110102MAD55U9H0F10002'
   Label: '1'
-  ProduceID: '20ee65ff-f74b-4781-a74a-60510b98d8f4'
-  PropagateID: '20ee65ff-f74b-4781-a74a-60510b98d8f4'
-  ReservedCode1: 'b62b7691-602b-4595-8967-89e2b05ed822'
-  ReservedCode2: 'b62b7691-602b-4595-8967-89e2b05ed822'
+  ProduceID: 'c33cf19e-13c6-42f8-a7de-ce61a2c4d8bd'
+  PropagateID: 'c33cf19e-13c6-42f8-a7de-ce61a2c4d8bd'
+  ReservedCode1: '121a7964-5a3e-4fdf-9e2a-3d648a8ce7ad'
+  ReservedCode2: '121a7964-5a3e-4fdf-9e2a-3d648a8ce7ad'
 ---
 
 # Breath of Fire IV — Simplified Chinese Translation Project
@@ -28,10 +28,11 @@ AIGC:
 | Font layout RE | ✅ Done | 21-column grid + low-nibble-left (verified byte-by-byte against VRAM dumps) |
 | Glyph pipeline | ✅ Done | XP SimSun 12px bitmap + right/bottom 2-direction thin outline (v12 final) |
 | Emulator test | ✅ Passed | v12 verification image displays Chinese correctly (desert meteor scene) |
-| **Font capacity** | ❌ **Unresolved** | 2,087 unique chars in translation > original architecture capacity. See "Core Bottleneck" |
+| **Font capacity** | ❌ **Unresolved** | 2,087 unique chars > architecture capacity; **Path E (CLUT banking) passed static verification, awaiting v13 prototype**. See "Core Bottleneck" |
 
 ⚠️ **A full translated image cannot be built yet**: translation and rendering
-technology are ready, but the font capacity model needs a redesign.
+technology are ready; the capacity model is being redesigned — **Path E
+(CLUT banking) has passed static verification and only needs a v13 prototype test**.
 Please read [docs/cracking_analysis.md](docs/cracking_analysis.md) (Chinese) and the
 "Core Bottleneck" section below before continuing.
 
@@ -62,6 +63,13 @@ The capacity model must be redesigned. Feasible paths (by invasiveness):
 - **Path B**: constrained vocabulary — retranslate with a limited char set (~1,500 common chars), zero relocation
 - **Path C**: segment expansion — grow font segments to 53,248 bytes each (`tools/emi_expand.py` ready; image grows)
 - **Path D**: locate the small-font glyph resource (+225 slots, still insufficient alone; combine with others)
+- **Path E★ (NEW, static verification passed)**: multiple glyph sets sharing pixels (CLUT banking) —
+  pack 2/4 glyph sets into the same 12×12 slot with distinct pixel indices; at runtime the game's
+  native `{色XX}` palette-window switch (64 windows) selects the visible set. Static RE confirmed:
+  no pre-rasterized glyph cache, per-glyph CLUT field is a runtime variable, and palette content
+  comes from EMI CLUT segments we fully control → capacity ×2 (keeps outline) / ×4
+  (fits the entire translation with zero relocation).
+  See [docs/clut_banking_design.md](docs/clut_banking_design.md) (Chinese)
 
 ## Repository Layout
 
@@ -78,7 +86,7 @@ bof4-chinese/
 │   │   ├── batch_01~24.tsv      #   id / file / seg / src (Japanese) / tgt (Chinese)
 │   │   ├── SPEC.md              #   Translation spec (kana ban, transliteration, glossary, control codes)
 │   │   └── TSV_README.md        #   TSV usage notes
-│   ├── original_japanese.txt    # Full decoded original text (human-readable)
+│   ├── original_japanese.txt    # Full decoded original text (multi-page, v0.6 rebuild)
 │   ├── translated_chinese.txt   # Full JP/CN parallel text
 │   └── original_hex_comparison.txt
 │
@@ -87,7 +95,7 @@ bof4-chinese/
 │   ├── merge_tsv.py             # ★ Merge TSV translations back into the workbook (with full QA)
 │   ├── check_capacity.py        # ★ Character capacity audit (per-file usage vs segment capacity)
 │   ├── patch_bin.py             # ★ One-click build: workbook + font → translated image
-│   ├── export_text.py           # Text export (+ font-source analysis)
+│   ├── export_text.py           # Text export (multi-page + scene font map, fixed in v0.6)
 │   ├── dump_font.py             # Original font extraction → PNG + meta.json
 │   ├── import_font.py           # Original font restoration (round-trip verification)
 │   ├── scan_fonts.py            # Scan all 297 font segments
@@ -105,10 +113,12 @@ bof4-chinese/
 │   ├── font_segments_report.json# Report of all 297 font segments
 │   ├── main_font_index.csv      # Original main font index table
 │   ├── small_font_index.csv     # Original small font index table
-│   └── text_blocks_original.json# Original text blocks (hex + decoded)
+│   ├── scene_map_original.json  # Original scene font mapping, 5,388 entries
+│   └── text_blocks_original.json# Original text blocks (hex + decoded, v0.6 rebuild)
 │
 ├── docs/                        # All in Chinese
 │   ├── cracking_analysis.md     # ★ Cracking technical document (formats/encoding/fonts/capacity)
+│   ├── clut_banking_design.md   # ★ Path E design doc (CLUT banking; static verification done)
 │   ├── translation_guide.md     # Translation spec and glossary baseline
 │   ├── slps_reverse_engineering.md # SLPS RE report (font loading path)
 │   ├── font_source_experiment.md   # Font source experiments
@@ -276,10 +286,10 @@ not found in any of the 297 font segments. **Its inherent characters are usable
 
 ## Handover Guide
 
-1. **Read the docs**: `docs/cracking_analysis.md` (all format/layout/capacity facts, in Chinese) → this README's "Core Bottleneck"
+1. **Read the docs**: `docs/cracking_analysis.md` (all format/layout/capacity facts, in Chinese) → this README's "Core Bottleneck" → `docs/clut_banking_design.md` (Path E, in Chinese)
 2. **Run the tests**: `python -m unittest discover -s tests`
 3. **Verify the font**: `dump_font.py` + `import_font.py` round-trip
-4. **Pick a capacity path**: A/B/C/D above, or propose a new one
+4. **Pick a capacity path**: A/B/C/D/E above (Path E = CLUT banking, design doc ready, awaiting v13 prototype)
 5. **Build**: `merge_tsv.py` → `patch_bin.py` end-to-end
 6. **Test**: RetroArch (PCSX-ReArmed) or DuckStation
 

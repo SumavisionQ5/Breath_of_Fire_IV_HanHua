@@ -27,7 +27,7 @@ import struct
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'lib'))
 from bof4lib import (
     DSZ, read_file_from_iso, parse_dir, list_iso_files,
-    parse_emi, is_text_segment, trim, CTRL_LEN, CTRL_NAME
+    parse_emi, is_text_segment, split_pages, CTRL_LEN, CTRL_NAME
 )
 
 # ============================================================
@@ -65,13 +65,27 @@ def load_font_tables(data_dir):
 
 
 def load_scene_tables(data_dir):
-    """从 font_alloc.json 加载场景字库映射 (建议12).
+    """加载场景字库映射。
+
+    优先加载 data/scene_map_original.json —— 原版镜像场景字库的真实内容映射
+    (2026-09-18 由 workbook.src 与旧导出 hex 锚点对齐重建, 3988 条零冲突)。
+    原版文本导出必须用它: font_alloc.json 是我们自己的 v2 分配方案,
+    槽位内容与原版字库无关 (曾导致 '私'→'砂' 等错位显示)。
 
     Returns:
         dict: {(fname, idx): char}
     """
-    path = os.path.join(data_dir, "font_alloc.json")
     scene = {}
+    orig_path = os.path.join(data_dir, "scene_map_original.json")
+    if os.path.exists(orig_path):
+        with open(orig_path, encoding="utf-8") as f:
+            raw = json.load(f)
+        for key, ch in raw.items():
+            fname, idx = key.rsplit("|", 1)
+            scene[(fname, int(idx))] = ch
+        return scene
+    # 兼容回退: 旧 font_alloc.json (仅重建表缺失时)
+    path = os.path.join(data_dir, "font_alloc.json")
     if os.path.exists(path):
         raw = open(path, "r", encoding="utf-8").read()
         if not raw.lstrip().startswith('{'):
@@ -140,18 +154,23 @@ def decode_with_sources(raw, fname, MA, SM, SCENE):
                             "raw": "%02x%02x" % (b, raw[j + 1])})
             j += 2
         elif b < 33:
+            # 控制码: CTRL_LEN[b] = 码+参数总长 (2026-09-18 修正后的全表)
             n = CTRL_LEN.get(b, 1)
             disp = None
-            if b in CTRL_NAME and n > 1:
-                try:
-                    disp = CTRL_NAME[b] % tuple(raw[j + 1:j + n])
-                except Exception:
-                    disp = None
+            if b == 0x20:
+                disp = " "                     # 空格 (dispatcher: 仅推进光标)
             elif b == 0x01:
                 disp = "\n"
             elif b == 0x02:
                 disp = "\n---\n"
-            if disp:
+            elif b in CTRL_NAME:
+                try:
+                    # 占位符数 = 参数数 (n-1), 正常必成功;
+                    # 旧版此处 TypeError 后静默丢输出 (损坏 JSON 的成因), 现兑底可见。
+                    disp = CTRL_NAME[b] % tuple(raw[j + 1:j + n])
+                except Exception:
+                    disp = "{码%02X%s}" % (b, raw[j + 1:j + n].hex().upper())
+            if disp is not None:
                 out.append(disp)
                 sources.append({"char": disp, "font": "control", "index": b,
                                 "raw": raw[j:j + n].hex()})
@@ -248,36 +267,52 @@ def export_all(bin_path, output_dir=".", with_font_source=False):
 
             ents = []
             fs_ents = []
+            slot_meta = []
             for k in range(len(vals)):
                 s = vals[k]
                 e = vals[k + 1] if k + 1 < len(vals) else len(seg)
                 if e <= s:
                     continue
                 raw = seg[s:e]
-                trimmed = trim(raw)
-                if not trimmed:
-                    continue
-                # 建议11/12/13: 传入场景映射, 同时记录字库来源
-                txt, sources = decode_with_sources(trimmed, name, MA, SM, SCENE)
-                ents.append({"hex": trimmed.hex(), "txt": txt})
-                if with_font_source:
-                    fs_ents.append({
-                        "hex": trimmed.hex(),
-                        "txt": txt,
-                        "sources": sources,
-                        "summary": summarize_sources(sources),
+                if raw == b'\x00' * len(raw):
+                    continue                    # 全零槽: 无内容
+                # 多页切分 (2026-09-18 修复: 旧版只导首页, 尾页全丢)
+                pages = split_pages(raw)
+                trailing_nul = bool(pages and pages[-1] == b'' and raw.endswith(b'\x00'))
+                if trailing_nul:
+                    pages = pages[:-1]          # 尾空页 = 终止符后的存储空位, 非真实页
+                slot_meta.append({
+                    "slot": k, "pages": len(pages), "trailing_nul": trailing_nul,
+                })
+                for pi, page in enumerate(pages):
+                    txt, sources = decode_with_sources(page, name, MA, SM, SCENE)
+                    ents.append({
+                        "hex": page.hex(), "txt": txt,
+                        "slot": k, "page": pi + 1, "npages": len(pages),
                     })
-                    for src in sources:
-                        if src["font"] != "control":
-                            font_stat[src["font"]] = font_stat.get(src["font"], 0) + 1
-                total += 1
+                    if with_font_source:
+                        fs_ents.append({
+                            "hex": page.hex(),
+                            "txt": txt,
+                            "slot": k, "page": pi + 1, "npages": len(pages),
+                            "sources": sources,
+                            "summary": summarize_sources(sources),
+                        })
+                        for src in sources:
+                            if src["font"] != "control":
+                                font_stat[src["font"]] = font_stat.get(src["font"], 0) + 1
+                    total += 1
 
             if ents:
-                blocks.append({"file": name, "seg": i + 1, "strings": ents})
+                blocks.append({"file": name, "seg": i + 1,
+                               "strings": ents, "slots": slot_meta})
             if fs_ents:
                 font_source_blocks.append({"file": name, "seg": i + 1, "strings": fs_ents})
 
-    print("\n文本段: %d, 字符串: %d" % (len(blocks), total))
+    n_multi = sum(1 for blk in blocks for m in blk.get("slots", []) if m["pages"] > 1)
+    n_slots = sum(len(blk.get("slots", [])) for blk in blocks)
+    print("\n文本段: %d, 槽: %d (多页槽 %d), 页条目: %d" % (
+        len(blocks), n_slots, n_multi, total))
 
     # 保存
     os.makedirs(output_dir, exist_ok=True)
@@ -287,16 +322,30 @@ def export_all(bin_path, output_dir=".", with_font_source=False):
         json.dump(blocks, f, ensure_ascii=False)
     print("已保存: %s" % json_path)
 
-    # 可读文本
+    # 可读文本 (每页一条, [槽.页] 前缀)
     txt_path = os.path.join(output_dir, "all_text.txt")
     with open(txt_path, "w", encoding="utf-8") as f:
-        f.write("龙战士4 (Breath of Fire IV) 全量文本导出\n")
+        f.write("龙战士4 (Breath of Fire IV) 全量文本导出 (多页版)\n")
+        f.write("格式: [槽.页] 文本; 同槽多页 = 游戏内翻页/子文本引用\n")
         f.write("=" * 72 + "\n\n")
         for blk in blocks:
             f.write("\n########## %s seg%d ##########\n" % (blk["file"], blk["seg"]))
             for e in blk["strings"]:
-                f.write(e["txt"] + "\n")
+                body = e["txt"] if e["txt"] else "(空页)"
+                f.write("[%d.%d] %s\n" % (e["slot"], e["page"], body))
     print("已保存: %s" % txt_path)
+
+    # hex 对照文本
+    hex_path = os.path.join(output_dir, "hex_comparison.txt")
+    with open(hex_path, "w", encoding="utf-8") as f:
+        f.write("龙战士4 全量文本 (hex + 解码对照) [多页版]\n")
+        f.write("=" * 72 + "\n")
+        for blk in blocks:
+            f.write("\n########## %s seg%d ##########\n" % (blk["file"], blk["seg"]))
+            for e in blk["strings"]:
+                f.write("[%d.%d] %s\n" % (e["slot"], e["page"], e["hex"]))
+                f.write("      %s\n" % (e["txt"] if e["txt"] else "(空页)"))
+    print("已保存: %s" % hex_path)
 
     # 字库来源详解 (建议13)
     if with_font_source:
