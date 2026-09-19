@@ -30,8 +30,8 @@ desktop.ini
 *.bak
 *.pre_backfill.bak
 *.log
-#font_dump/
-#.temp/
+font_dump/
+.temp/
 
 # Reports (regeneratable)
-#bof4_audit_report.html
+bof4_audit_report.html

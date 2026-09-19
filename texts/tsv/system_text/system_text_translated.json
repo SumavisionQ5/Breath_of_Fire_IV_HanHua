@@ -1,0 +1,1118 @@
+[
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42128,
+  "hex": "bb5df673772031f6d8e1b5124512bfa26a",
+  "txt": "セーブには 1ブロック必要です",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 162960
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 160912
+   }
+  ],
+  "id": "sys_000",
+  "tgt": "存档需要1个区块"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42146,
+  "hex": "c9dcafd60701732012c2695fc9dcafd68a13151243697c6a63",
+  "txt": "ファイル{占位01}に 新しいファイルを作成しますか",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 162978
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 160930
+   }
+  ],
+  "id": "sys_001",
+  "tgt": "文件{占位01}是否新建存档文件？"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42172,
+  "hex": "c9dcafd6070173201268132d6469708388695fa26a63",
+  "txt": "ファイル{占位01}に 上書きしてよろしいですか",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163004
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 160956
+   }
+  ],
+  "id": "sys_002",
+  "tgt": "文件{占位01}是否覆盖存档？"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42195,
+  "hex": "6776c9dcafd673201268132d646a86128377a2647c6b8b",
+  "txt": "このファイルに 上書きする事はできません",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163027
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 160979
+   }
+  ],
+  "id": "sys_003",
+  "tgt": "此文件无法覆盖"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42219,
+  "hex": "44415441204552524f52",
+  "txt": "DATA ERROR",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163051
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 161003
+   }
+  ],
+  "id": "sys_004",
+  "tgt": "DATA ERROR"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42230,
+  "hex": "12641290b45d126812a83acfd0d55db35df38a128512ba01050a15",
+  "txt": "方向キー上下：メモリーカードを選択\n{色0A}",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163062
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 161014
+   }
+  ],
+  "id": "sys_005",
+  "tgt": "方向键上下：选择记忆卡\n{色0A}"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42258,
+  "hex": "063a1288127c01050a1501063abb5df62fd85df38a817f86",
+  "txt": "{/色}：決定\n{色0A}×{/色}：セーブ/ロードをやめる",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163090
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 161042
+   }
+  ],
+  "id": "sys_006",
+  "tgt": "{/色}：确定\n{色0A}×{/色}：取消存档/读取"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42283,
+  "hex": "12641290b45d203ab35dbcd67612861287014c31404c323a0112f41303120e1201638412d876f25dbd73b35dbcd6128612870252314052323a0112f41303120e12d86384120176f25dbd73b35dbcd61286128702050a15",
+  "txt": "方向キー ：カーソルの移動\nL1·L2：\n時間最大から小のデータにカーソル移動\n---\nR1·R2：\n時間最小から大のデータにカーソル移動\n---\n{色0A}",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163115
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 161067
+   }
+  ],
+  "id": "sys_007",
+  "tgt": "方向键：移动光标\nL1·L2：\n跳到最新存档\n---\nR1·R2：\n跳到最旧存档\n---\n{色0A}"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42371,
+  "hex": "06203a1288127c01050a150106203acfd0d55db35df3128512ba12a112a273128f86",
+  "txt": "{/色} ：決定\n{色0A}×{/色} ：メモリーカード選択画面に戻る",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163203
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 161155
+   }
+  ],
+  "id": "sys_008",
+  "tgt": "{/色} ：确定\n{色0A}×{/色} ：返回记忆卡选择"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42406,
+  "hex": "cfd0d55db35df3135713581359317301cfd0d55db35df3955e857c6b8b02bb5df69512cc6186836001cfd0d55db35df376011270127d8a626a6a7f697c6a",
+  "txt": "メモリーカード差込口1に\nメモリーカードがありません\n---\nセーブが行えるよう\nメモリーカードの\n使用をおすすめします",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163238
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 161190
+   }
+  ],
+  "id": "sys_009",
+  "tgt": "记忆卡插槽1中\n未找到记忆卡\n---\n请准备记忆卡\n以便\n进行存档"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42469,
+  "hex": "cfd0d55db35df3135713581359317601cfd0d55db35df37320125364f6d8e1b595015e857c6b8b02bb5df69512cc618683602031f6d8e1b512c912687601125364955e8620cfd0d55db35df3761270127d8a01626a6a7f697c6a",
+  "txt": "メモリーカード差込口1の\nメモリーカードに 空きブロックが\nありません\n---\nセーブが行えるよう 1ブロック以上の\n空きがある メモリーカードの使用を\nおすすめします",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163301
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 161253
+   }
+  ],
+  "id": "sys_010",
+  "tgt": "记忆卡插槽1的\n记忆卡没有空闲区块\n---\n请确保有1个以上\n空闲区块的记忆卡\n以便\n进行存档"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42560,
+  "hex": "cfd0d55db35df3135713581359317601cfd0d55db35df376c9dcafd69501678987705f7c6a0267767c7ca27720e85dce12",
+  "txt": "メモリーカード差込口1の\nメモリーカードのファイルが\nこわれています\n---\nこのままでは ゲーム",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163392
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 161344
+   }
+  ],
+  "id": "sys_011",
+  "tgt": "记忆卡插槽1的\n记忆卡文件\n已损坏\n---\n这样将无法"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42610,
+  "hex": "73bb5df68a0112cc60128395a2647c6b8b02bb5df69512cc618683602031f6d8e1b512c912687601125364955e8620cfd0d55db35df3761270127d8a01626a6a7f697c6a",
+  "txt": "にセーブを\n行う事ができません\n---\nセーブが行えるよう 1ブロック以上の\n空きがある メモリーカードの使用を\nおすすめします",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163442
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 161394
+   }
+  ],
+  "id": "sys_012",
+  "tgt": "进行游戏存档\n---\n请确保有1个以上\n空闲区块的记忆卡\n以便\n进行存档"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42679,
+  "hex": "20204552524f52",
+  "txt": "  ERROR",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163511
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 161463
+   }
+  ],
+  "id": "sys_013",
+  "tgt": "  ERROR"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42687,
+  "hex": "0c8914810c82775f015f5f61",
+  "txt": "{框89}{码14810C82}はい\nいいえ",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163519
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 161471
+   }
+  ],
+  "id": "sys_014",
+  "tgt": "{框89}{码14810C82}是\n否"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42700,
+  "hex": "3120649a69",
+  "txt": "1 きざし",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163532
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 161484
+   }
+  ],
+  "id": "sys_015",
+  "tgt": "1 征兆"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42706,
+  "hex": "3220125773636389868076",
+  "txt": "2 竜にかかわるもの",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163538
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 161490
+   }
+  ],
+  "id": "sys_016",
+  "tgt": "2 与龙相关之物"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42718,
+  "hex": "3320124f616d12141272",
+  "txt": "3 消えた王女",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163550
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 161502
+   }
+  ],
+  "id": "sys_017",
+  "tgt": "3 消失的公主"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 42729,
+  "hex": "34201214125c76123d",
+  "txt": "4 王家の剣",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 163561
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 161513
+   }
+  ],
+  "id": "sys_018",
+  "tgt": "4 王族之剑"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 43570,
+  "hex": "12641290b45d",
+  "txt": "方向キー",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 164402
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 162354
+   }
+  ],
+  "id": "sys_019",
+  "tgt": "方向键"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 43577,
+  "hex": "cfe1bb5deb",
+  "txt": "メッセージ",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 164409
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 162361
+   }
+  ],
+  "id": "sys_020",
+  "tgt": "消息"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 43607,
+  "hex": "ccc3e3aed6",
+  "txt": "マニュアル",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 164439
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 162391
+   }
+  ],
+  "id": "sys_021",
+  "tgt": "手动"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 43880,
+  "hex": "efe1b9e3f8bddb8a12a5697012a686632412a765638a1285a77c6a011507aec2d8e7d05df3a2802082606760a26a",
+  "txt": "ダッシュボタンを押して走るか、步くかを選べます\n>アナログモードでも ゆうこうです",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 164712
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 162664
+   }
+  ],
+  "id": "sys_022",
+  "tgt": "按下冲刺键可选择奔跑或步行\n>模拟模式同样有效"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 43927,
+  "hex": "b3cfd4957c8986126412908a207a8b6760697c6a",
+  "txt": "カメラがまわる方向を へんこうします",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 164759
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 162711
+   }
+  ],
+  "id": "sys_023",
+  "tgt": "更改视角旋转方向"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 43948,
+  "hex": "12641290b45d126812a812911292a272727f1286128773127b127ca2647c6a011507c9dd5dd6f312861287767d2082606760a26a",
+  "txt": "方向キー上下左右でななめ移動に設定できます\n>フィールド移動のみ ゆうこうです",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 164780
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 162732
+   }
+  ],
+  "id": "sys_024",
+  "tgt": "方向键上下左右可设置斜向移动\n>仅在地图移动时有效"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44001,
+  "hex": "cfe1bb5debbafa5df38a207a8b6760697c6a",
+  "txt": "メッセージスピードを へんこうします",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 164833
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 162785
+   }
+  ],
+  "id": "sys_025",
+  "tgt": "更改消息显示速度"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44020,
+  "hex": "b8b0dbf3127b127c8a207a8b6760697c6a",
+  "txt": "サウンド設定を へんこうします",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 164852
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 162804
+   }
+  ],
+  "id": "sys_026",
+  "tgt": "更改声音设置"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44038,
+  "hex": "42474d76f8d5e35dce8a2012a3127e697c6a",
+  "txt": "BGMのボリュームを 調整します",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 164870
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 162822
+   }
+  ],
+  "id": "sys_027",
+  "tgt": "调整BGM音量"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44057,
+  "hex": "534576f8d5e35dce8a2012a3127e697c6a",
+  "txt": "SEのボリュームを 調整します",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 164889
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 162841
+   }
+  ],
+  "id": "sys_028",
+  "tgt": "调整SE音量"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44075,
+  "hex": "6aa77076127b127c8a201273129b129c697c696d",
+  "txt": "すべての設定を 初期化しました",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 164907
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 162859
+   }
+  ],
+  "id": "sys_029",
+  "tgt": "所有设置已重置"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44096,
+  "hex": "12641290b45d126812a83ab7ccdbf38a128512ba01050a15",
+  "txt": "方向キー上下：コマンドを選択\n{色0A}",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 164928
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 162880
+   }
+  ],
+  "id": "sys_030",
+  "tgt": "方向键上下：选择指令\n{色0A}"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44121,
+  "hex": "063a1288127c01050a1501063ae85dce127b127c7612b812b9",
+  "txt": "{/色}：決定\n{色0A}×{/色}：ゲーム設定の終了",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 164953
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 162905
+   }
+  ],
+  "id": "sys_031",
+  "tgt": "{/色}：确定\n{色0A}×{/色}：退出游戏设置"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44147,
+  "hex": "12641290b45d126812a83a127b127c63699476128512ba0112641290b45d129112923a127b127c767a8b676001050a1501063ab4e2dbbbd6",
+  "txt": "方向キー上下：設定かしょの選択\n方向キー左右：設定のへんこう\n{色0A}×{/色}：キャンセル",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 164979
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 162931
+   }
+  ],
+  "id": "sys_032",
+  "tgt": "方向键上下：选择设置项\n方向键左右：更改设置\n{色0A}×{/色}：取消"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44204,
+  "hex": "12641290b45d129112923af8bddb127b127c76128512ba012001050a1501063ae85dce127b127c12a112a273128f86281288127c29",
+  "txt": "方向キー左右：ボタン設定の選択\n \n{色0A}×{/色}：ゲーム設定画面に戻る（決定）",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165036
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 162988
+   }
+  ],
+  "id": "sys_033",
+  "tgt": "方向键左右：选择按键设置\n \n{色0A}×{/色}：返回游戏设置（确定）"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44258,
+  "hex": "12641290b45d3a12a112a2fdebb9e4db7612a3127e012001050a1501063ae85dce127b127c12a112a273128f86281288127c29",
+  "txt": "方向キー：画面ポジションの調整\n \n{色0A}×{/色}：ゲーム設定画面に戻る（決定）",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165090
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163042
+   }
+  ],
+  "id": "sys_034",
+  "tgt": "方向键：调整画面位置\n \n{色0A}×{/色}：返回游戏设置（确定）"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44310,
+  "hex": "20202020127aa56361",
+  "txt": "    並びかえ",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165142
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163094
+   }
+  ],
+  "id": "sys_035",
+  "tgt": "    排序"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44320,
+  "hex": "b8f612a112a2",
+  "txt": "サブ画面",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165152
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163104
+   }
+  ],
+  "id": "sys_036",
+  "tgt": "副画面"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44327,
+  "hex": "aeb5b9e4db",
+  "txt": "アクション",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165159
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163111
+   }
+  ],
+  "id": "sys_037",
+  "tgt": "动作"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44333,
+  "hex": "40b4e2dbbbd6",
+  "txt": "·キャンセル",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165165
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163117
+   }
+  ],
+  "id": "sys_038",
+  "tgt": "·取消"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44340,
+  "hex": "5354415254f8bddb20202020fd5dec",
+  "txt": "STARTボタン    ポーズ",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165172
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163124
+   }
+  ],
+  "id": "sys_039",
+  "tgt": "START键      暂停"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44356,
+  "hex": "53454c454354f8bddb202020cad6fb",
+  "txt": "SELECTボタン   ヘルプ",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165188
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163140
+   }
+  ],
+  "id": "sys_040",
+  "tgt": "SELECT键     帮助"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44372,
+  "hex": "bdaffb3101150712641290b45d12911292a220bdaffb8a12858ba2659f685f",
+  "txt": "タイプ1\n>方向キー左右で タイプを選んでください",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165204
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163156
+   }
+  ],
+  "id": "sys_041",
+  "tgt": "类型1\n>请用方向键左右选择类型"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44404,
+  "hex": "bdaffb3201150712641290b45d12911292a220bdaffb8a12858ba2659f685f",
+  "txt": "タイプ2\n>方向キー左右で タイプを選んでください",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165236
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163188
+   }
+  ],
+  "id": "sys_042",
+  "tgt": "类型2\n>请用方向键左右选择类型"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44436,
+  "hex": "bdaffb3301150712641290b45d12911292a220bdaffb8a12858ba2659f685f",
+  "txt": "タイプ3\n>方向キー左右で タイプを選んでください",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165268
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163220
+   }
+  ],
+  "id": "sys_043",
+  "tgt": "类型3\n>请用方向键左右选择类型"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44468,
+  "hex": "bdaffb3401150712641290b45d12911292a220bdaffb8a12858ba2659f685f",
+  "txt": "タイプ4\n>方向キー左右で タイプを選んでください",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165300
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163252
+   }
+  ],
+  "id": "sys_044",
+  "tgt": "类型4\n>请用方向键左右选择类型"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44514,
+  "hex": "12b612b7401288127c",
+  "txt": "会話·決定",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165346
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163298
+   }
+  ],
+  "id": "sys_045",
+  "tgt": "对话·确定"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44530,
+  "hex": "050a150206",
+  "txt": "{色0A}△{/色}",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165362
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163314
+   }
+  ],
+  "id": "sys_046",
+  "tgt": "{色0A}△{/色}"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44536,
+  "hex": "050a150306",
+  "txt": "{色0A}□{/色}",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165368
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163320
+   }
+  ],
+  "id": "sys_047",
+  "tgt": "{色0A}□{/色}"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44542,
+  "hex": "050a150106",
+  "txt": "{色0A}×{/色}",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165374
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163326
+   }
+  ],
+  "id": "sys_048",
+  "tgt": "{色0A}×{/色}"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44558,
+  "hex": "12641290b45da22012a112a2c9d75dce8a12a3127e6970659f685f011507050a150106a22012b812b9281288127c29",
+  "txt": "方向キーで 画面フレームを調整してください\n>{色0A}×{/色}で 終了（決定）",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165390
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163342
+   }
+  ],
+  "id": "sys_049",
+  "tgt": "请用方向键调整画面边框\n>{色0A}×{/色}结束（确定）"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44608,
+  "hex": "5b71856669",
+  "txt": "‥とりけし",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165440
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163392
+   }
+  ],
+  "id": "sys_050",
+  "tgt": "…删除"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44614,
+  "hex": "5b6a6a7e",
+  "txt": "‥すすむ",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165446
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163398
+   }
+  ],
+  "id": "sys_051",
+  "tgt": "…前进"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44619,
+  "hex": "5b80a386",
+  "txt": "‥もどる",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165451
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163403
+   }
+  ],
+  "id": "sys_052",
+  "tgt": "…返回"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44624,
+  "hex": "5b779b7f86",
+  "txt": "‥はじめる",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165456
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163408
+   }
+  ],
+  "id": "sys_053",
+  "tgt": "…开始"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44636,
+  "hex": "150a06a28388695fa26a63",
+  "txt": "』{/色}でよろしいですか",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165468
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163420
+   }
+  ],
+  "id": "sys_054",
+  "tgt": "』{/色}确定吗？"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44648,
+  "hex": "12641290b45d203ab35dbcd67612861287014c31404c322f52314052320120202020203a13261327124e648563610244454c3a132613278a666a01424b203a12f112bb12bd124d8a817f86014f4b203a12f112bb761288127c",
+  "txt": "方向キー ：カーソルの移動\nL1·L2/R1·R2\n     ：文字種きりかえ\n---\nDEL：文字をけす\nBK ：名前入力をやめる\nOK ：名前の決定",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165480
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163432
+   }
+  ],
+  "id": "sys_055",
+  "tgt": "方向键：移动光标\nL1·L2/R1·R2\n     ：切换文字种类\n---\nDEL：删除文字\nBK ：取消名字输入\nOK ：确定名字"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44738,
+  "hex": "b35dbcd695122191705f8620132613278a66697c6a",
+  "txt": "カーソルが合っている 文字をけします",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165570
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163522
+   }
+  ],
+  "id": "sys_056",
+  "tgt": "删除光标所在处的文字"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44760,
+  "hex": "12bb7612a112a273128f857c6a",
+  "txt": "前の画面に戻ります",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165592
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163544
+   }
+  ],
+  "id": "sys_057",
+  "tgt": "返回上一个画面"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44774,
+  "hex": "12f112bb8a1288127c697c6a",
+  "txt": "名前を決定します",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165606
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163558
+   }
+  ],
+  "id": "sys_058",
+  "tgt": "确定名字"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44787,
+  "hex": "fbd7afd15d762012f112bb8a12887f70659f685f",
+  "txt": "プレイヤーの 名前を決めてください",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165619
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163571
+   }
+  ],
+  "id": "sys_059",
+  "tgt": "请决定玩家的名字"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44808,
+  "hex": "070176205e9f12f18a12887f70659f685f",
+  "txt": "{占位01}の あだ名を決めてください",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165640
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163592
+   }
+  ],
+  "id": "sys_060",
+  "tgt": "请决定{占位01}的昵称"
+ },
+ {
+  "file": "SYSTEM/DEMO.EMI",
+  "offset": 44831,
+  "hex": "a367a280cfc3e35dd05df301cfc3e35d8a61848ba27514810c9369936577656a8601bb5df601817f706265",
+  "txt": "どこでもメニューモード\nメニューをえらんでね{码14810C93}しゅくはくする\nセーブ\nやめておく",
+  "also_in": [
+   {
+    "file": "SYSTEM/SAVE.EMI",
+    "offset": 165663
+   },
+   {
+    "file": "SYSTEM/START.EMI",
+    "offset": 163615
+   }
+  ],
+  "id": "sys_061",
+  "tgt": "随处菜单模式\n请选择菜单{码14810C93}住宿\n存档\n退出"
+ }
+]
