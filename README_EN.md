@@ -3,10 +3,10 @@ AIGC:
   ContentProducer: '001191110102MAD55U9H0F10002'
   ContentPropagator: '001191110102MAD55U9H0F10002'
   Label: '1'
-  ProduceID: 'c33cf19e-13c6-42f8-a7de-ce61a2c4d8bd'
-  PropagateID: 'c33cf19e-13c6-42f8-a7de-ce61a2c4d8bd'
-  ReservedCode1: '121a7964-5a3e-4fdf-9e2a-3d648a8ce7ad'
-  ReservedCode2: '121a7964-5a3e-4fdf-9e2a-3d648a8ce7ad'
+  ProduceID: '9ee65c80-20fe-4fb6-a1f5-ed4f66c82c5b'
+  PropagateID: '9ee65c80-20fe-4fb6-a1f5-ed4f66c82c5b'
+  ReservedCode1: '84576f3e-56a4-4377-9320-90d5ff0db2a6'
+  ReservedCode2: '84576f3e-56a4-4377-9320-90d5ff0db2a6'
 ---
 
 # Breath of Fire IV — Simplified Chinese Translation Project
@@ -18,7 +18,7 @@ AIGC:
 > This repository contains all translations, tools, and reverse-engineering docs
 > so that future contributors can fully reproduce the work.
 
-## Current Status (2026-09-18)
+## Current Status (2026-09-20)
 
 | Module | Status | Notes |
 |--------|--------|-------|
@@ -26,17 +26,21 @@ AIGC:
 | Full retranslation | ✅ Done | 15,049 non-empty strings, 100%, finalized in 24 TSV batches |
 | Translation QA | ✅ Done | Control codes / newlines / separators all consistent, 0 kana, 0 missing |
 | Font layout RE | ✅ Done | 21-column grid + low-nibble-left (verified byte-by-byte against VRAM dumps) |
-| Glyph pipeline | ✅ Done | XP SimSun 12px bitmap + right/bottom 2-direction thin outline (v12 final) |
-| Emulator test | ✅ Passed | v12 verification image displays Chinese correctly (desert meteor scene) |
-| **Font capacity** | ❌ **Unresolved** | 2,087 unique chars > architecture capacity; **Path E (CLUT banking) passed static verification, awaiting v13 prototype**. See "Core Bottleneck" |
+| **Font capacity** | ✅ **Resolved** | 4-set 1bpp CLUT banking (Path E implemented; shipped in the v15 full build) |
+| **Full translated image** | ✅ **Built** | v15 full build (story/dialog) + v16e system-text backfill, tested in-game |
+| System text backfill | ✅ v16e | 62 save/load/settings/naming strings tested in-game; remaining 1,138 translated, backfill pending (v16f) |
+| Glyph pipeline | ✅ Done | XP SimSun 12px bitmap; outline = 8-neighborhood ring (corrected in v16e) |
+| Emulator test | ✅ Passed | v16e naming screen: white core + dark outline clearly readable; title/graphics no regression |
 
-⚠️ **A full translated image cannot be built yet**: translation and rendering
-technology are ready; the capacity model is being redesigned — **Path E
-(CLUT banking) has passed static verification and only needs a v13 prototype test**.
-Please read [docs/cracking_analysis.md](docs/cracking_analysis.md) (Chinese) and the
-"Core Bottleneck" section below before continuing.
+Current baseline image `bof4_chinese_v16e.bin` (740,731,544 B, SHA256 eeada38a…):
+the v15 full localization (story/dialog, 4-set font banking) plus the v16e system-text
+backfill (62 translations in DEMO seg2 + SYSTEM font packed as V1 outline / V9 white core
++ INIT win0[9] whitened). Build instructions under "Build the full image (v15/v16e)" below;
+the v16 technical findings are documented in
+[docs/v16_system_text_backfill.md](docs/v16_system_text_backfill.md) (Chinese) and
+[CHANGELOG.md](CHANGELOG.md) v0.8.2.
 
-## Core Bottleneck: Font Capacity
+## Font Capacity Problem (Resolved: Path E, 4-set CLUT banking, shipped in v15)
 
 Original font architecture (measured values under the 21-column layout):
 
@@ -63,13 +67,14 @@ The capacity model must be redesigned. Feasible paths (by invasiveness):
 - **Path B**: constrained vocabulary — retranslate with a limited char set (~1,500 common chars), zero relocation
 - **Path C**: segment expansion — grow font segments to 53,248 bytes each (`tools/emi_expand.py` ready; image grows)
 - **Path D**: locate the small-font glyph resource (+225 slots, still insufficient alone; combine with others)
-- **Path E★ (NEW, static verification passed)**: multiple glyph sets sharing pixels (CLUT banking) —
-  pack 2/4 glyph sets into the same 12×12 slot with distinct pixel indices; at runtime the game's
+- **Path E★ (IMPLEMENTED)**: multiple glyph sets sharing pixels (CLUT banking) —
+  pack four glyph sets into the same 12×12 slot with distinct pixel indices; at runtime the game's
   native `{色XX}` palette-window switch (64 windows) selects the visible set. Static RE confirmed:
   no pre-rasterized glyph cache, per-glyph CLUT field is a runtime variable, and palette content
-  comes from EMI CLUT segments we fully control → capacity ×2 (keeps outline) / ×4
-  (fits the entire translation with zero relocation).
-  See [docs/clut_banking_design.md](docs/clut_banking_design.md) (Chinese)
+  comes from EMI CLUT segments we fully control → capacity ×4, fitting the entire translation
+  with zero relocation. See [docs/clut_banking_design.md](docs/clut_banking_design.md) (Chinese).
+  **Shipped since v15**: 4-set architecture (global pool 330×4 + per-scene (cap-330)×4 +
+  native color-code forced sets + set-switch codes; build script `tools/bof4_v15_full_build.py`)
 
 ## Repository Layout
 
@@ -77,7 +82,7 @@ The capacity model must be redesigned. Feasible paths (by invasiveness):
 bof4-chinese/
 ├── README.md                    # Chinese readme (primary)
 ├── README_EN.md                 # This file
-├── CHANGELOG.md                 # v0.1 ~ v0.4 history
+├── CHANGELOG.md                 # v0.1 ~ v0.8.2 history
 ├── LICENSE                      # MIT
 ├── translation_workbook.json    # Translation workbook (17,676 entries, final translations)
 │
@@ -85,7 +90,8 @@ bof4-chinese/
 │   ├── tsv/                     # ★ 24 translation TSV batches (final, collaborative format)
 │   │   ├── batch_01~24.tsv      #   id / file / seg / src (Japanese) / tgt (Chinese)
 │   │   ├── SPEC.md              #   Translation spec (kana ban, transliteration, glossary, control codes)
-│   │   └── TSV_README.md        #   TSV usage notes
+│   │   ├── TSV_README.md        #   TSV usage notes
+│   │   └── system_text/         #   ★ System text (62 backfilled in v16e + 1,138 translated, pending v16f)
 │   ├── original_japanese.txt    # Full decoded original text (multi-page, v0.6 rebuild)
 │   ├── translated_chinese.txt   # Full JP/CN parallel text
 │   └── original_hex_comparison.txt
@@ -106,10 +112,18 @@ bof4-chinese/
 │   ├── analyze_font_usage.py    # Character usage analysis (allocation planning)
 │   ├── analyze_slps.py          # SLPS_027.28 reverse engineering (requires capstone)
 │   ├── make_patch.py            # BDIF diff patch generation
-│   └── apply_patch.py           # BDIF patch application
+│   ├── apply_patch.py           # BDIF patch application
+│   ├── bof4_v15_full_build.py   # ★ v15 full image build (4-set CLUT banking)
+│   ├── bof4_v16e_build.py       # ★ v16e = v15 + system-text backfill (DEMO seg2 + seg4 pool copy)
+│   ├── bof4_v16e_demo_verify.py # ★ v16e DEMO/SYSTEM focused verification
+│   ├── bof4_v16e_full_verify.py # ★ v16e full read-back verification (470 EMI / CLUT / fonts)
+│   ├── bof4_export_remaining.py    # Untranslated system-text export (1,138 strings)
+│   └── bof4_translate_remaining.py  # System-text translation fill-back into TSV (for v16f)
 │
 ├── data/
 │   ├── font_alloc_v2.json       # Font allocation plan (based on old translations, reference)
+│   ├── font_alloc_4set.json     # ★ v15 4-set allocation (used by the v15/v16e builds)
+│   ├── font_alloc_4set_v16.json # v16 4-set allocation (used by v16e verification)
 │   ├── font_segments_report.json# Report of all 297 font segments
 │   ├── main_font_index.csv      # Original main font index table
 │   ├── small_font_index.csv     # Original small font index table
@@ -118,6 +132,7 @@ bof4-chinese/
 │
 ├── docs/                        # All in Chinese
 │   ├── cracking_analysis.md     # ★ Cracking technical document (formats/encoding/fonts/capacity)
+│   ├── v16_system_text_backfill.md # ★ v16 system-text backfill findings (seg2/CLUT/glyph spec)
 │   ├── clut_banking_design.md   # ★ Path E design doc (CLUT banking; static verification done)
 │   ├── translation_guide.md     # Translation spec and glossary baseline
 │   ├── slps_reverse_engineering.md # SLPS RE report (font loading path)
@@ -184,12 +199,33 @@ python tools/patch_bin.py "<original>.bin" translation_workbook.json output.bin 
     --font C:/Windows/Fonts/simsun.ttc
 ```
 
-> Note: `--alloc` is based on the old translation's character set; the new full
-> translation will trigger capacity errors — exactly the "Core Bottleneck".
-> Once the capacity model is resolved, this command produces the image end-to-end.
+> Note: `patch_bin.py` is the v0.x scene-level verification tool (allocation based on the old
+> translation's character set). **The full build now goes through the v15/v16e chain** — see below.
 > Recommended font: **Windows XP SimSun simsun.ttc** (12px built-in bitmap glyphs).
 
-### Scene-level verification image (technology already validated)
+### Build the full image (v15/v16e, current baseline)
+
+```bash
+# v16e build = v15 full build (imports bof4_v15_full_build) first, then
+#   DEMO seg2 62-string backfill + SYSTEM font packed V1-outline/V9-white-core + INIT win0[9] whitening
+python tools/bof4_v16e_build.py
+
+# Double static verification (read-only, no image writes)
+python tools/bof4_v16e_demo_verify.py
+python tools/bof4_v16e_full_verify.py
+```
+
+Produces `bof4_chinese_v16e.bin` (740,731,544 B, SHA256 eeada38a…).
+Inputs: the original Japanese image, `translation_workbook.json`,
+`data/font_alloc_4set.json`, the 62-string system TSV, simsun.ttc.
+Paths in the script headers are machine-specific — adjust as needed.
+Architecture details: [docs/v16_system_text_backfill.md](docs/v16_system_text_backfill.md).
+
+v16f (planned): backfill the 1,138 translated system strings
+(`texts/tsv/system_text/system_text_remaining_translated.tsv`); requires adapting
+the non-standard seg2 tables of COMMU03/SGAMEN/SHOP (tbl[0]≠512) first.
+
+### Scene-level verification image (historical, v12-era)
 
 The v12 verification image (`bof4_verify_v12.bin`, zero relocation) was tested:
 Chinese renders clearly with proper outline and control codes.
@@ -224,7 +260,7 @@ glyphs in-game — this was the root cause of all previous display failures.
 isolated-pixel ratio 0.0036 (low-left) vs 0.0969 (high-left, 27× worse),
 the latter showing as odd/even column misalignment in-game.
 
-### 3. Glyph values + outline (v12 final)
+### 3. Glyph values + outline (v12 final; corrected by v16e evidence)
 
 | Value | Meaning |
 |-------|---------|
@@ -235,6 +271,15 @@ the latter showing as odd/even column misalignment in-game.
 Pure value-1 glyphs "occasionally disappear" on light backgrounds.
 Three variants were compared (none / 3-direction thick / right-bottom thin);
 **right-bottom 2-direction thin outline** was chosen.
+
+**v16e correction**: pixel-value statistics of the original glyphs (INIT seg7) show a
+double peak **V=1 (24.9%, dark outline) + V=8 (25.9%, bright core)** with 9-15 at zero;
+the outline structure is an **8-neighborhood ring** (80.9% coverage — not
+"right-bottom 2-direction"). Text palette = INIT seg1 win0: [1]=(7,7,7) dark outline,
+**[8]=(19,19,15) exactly the naming-screen panel background (must never be touched)**,
+[9]=(20,21,22) gray-scale peak. The v16e SYSTEM font packs outline→V=1 + core→V=9
+with INIT seg1/3/4 win0[9] whitened to 7FFF. See
+[docs/v16_system_text_backfill.md](docs/v16_system_text_backfill.md).
 
 ### 4. Font loading path (confirmed via SLPS RE)
 
@@ -266,6 +311,11 @@ the early documented value 349 was wrong).
 | Byte B (0x21-0x7E) | Small font index B-32 |
 | Byte B (<0x21) | Control code (17 kinds: `{框}` `{立绘}` `{引2}` etc., preserved in translation) |
 
+**System text (seg2) encoding differs from main text** (deciphered in v16, see
+[docs/v16_system_text_backfill.md](docs/v16_system_text_backfill.md)):
+single byte 0x20-0xFF → small-font idx 0-223; `0x15 XX` → icon codes
+(×=15 01 △=15 02 □=15 03 』=15 0A); `0x12/0x13` → main-font global pool.
+
 ### 7. Small font: independent resource, location unknown
 
 The small font (indices 0-61: ASCII/punctuation/kana) is an independent resource
@@ -286,11 +336,17 @@ not found in any of the 297 font segments. **Its inherent characters are usable
 
 ## Handover Guide
 
-1. **Read the docs**: `docs/cracking_analysis.md` (all format/layout/capacity facts, in Chinese) → this README's "Core Bottleneck" → `docs/clut_banking_design.md` (Path E, in Chinese)
+1. **Read the docs**: `docs/cracking_analysis.md` (format/layout/capacity facts, Chinese) →
+   `docs/clut_banking_design.md` (Path E architecture, Chinese) →
+   `docs/v16_system_text_backfill.md` (v16 findings, Chinese) → [CHANGELOG.md](CHANGELOG.md)
 2. **Run the tests**: `python -m unittest discover -s tests`
 3. **Verify the font**: `dump_font.py` + `import_font.py` round-trip
-4. **Pick a capacity path**: A/B/C/D/E above (Path E = CLUT banking, design doc ready, awaiting v13 prototype)
-5. **Build**: `merge_tsv.py` → `patch_bin.py` end-to-end
+4. **Reproduce the baseline**: `tools/bof4_v16e_build.py` → `bof4_v16e_demo_verify.py` +
+   `bof4_v16e_full_verify.py` → compare SHA256 against the current baseline
+5. **Continue with v16f**: backfill the 1,138 translated strings in
+   `texts/tsv/system_text/system_text_remaining_translated.tsv`
+   (requires adapting the non-standard seg2 tables of COMMU03/SGAMEN/SHOP), or continue with
+   scene-text outlines / VRAM font-upload transform RE (see CHANGELOG v0.8.2 known limits)
 6. **Test**: RetroArch (PCSX-ReArmed) or DuckStation
 
 ## Acknowledgments

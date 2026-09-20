@@ -123,6 +123,11 @@ def write_emi_to_iso(iso_data, name, new_emi, dry_run=False):
         # 搬移到尾部
         new_lba = tail_start_lba(iso_data)
         result["moved"] = True
+        # 关键: 越界切片赋值会插入到末尾而非目标位置 (Python bytearray 语义),
+        # 必须先扩展镜像到目标长度, 否则多文件搬移互相错位叠加 (v15 实证 bug)
+        need_end = (new_lba + new_sectors) * SEC + DOFF + DSZ
+        if len(iso_data) < need_end:
+            iso_data.extend(b'\x00' * (need_end - len(iso_data)))
 
     # 写入
     for i in range(new_sectors):

@@ -441,9 +441,53 @@ def encode_all_texts(workbook, alloc):
 # 步骤 4: 写入 BIN 镜像 (建议20: 严格报告)
 # ============================================================
 
+def encode_extra_pages(multipage, alloc):
+    """把多页翻译 (data/multi_page_translations.json) 编码为页级表。
+
+    页号 p 的编码位于返回列表 p-2 处 (页 1 由 workbook tgt 提供);
+    未提供的页补空串 = build_text_segment 保留原页。
+
+    Returns:
+        dict: {(file, seg): {slot: [页2 hex, 页3 hex, ...]}}
+
+    Raises:
+        RuntimeError: 存在未映射字符 (建议6: 不允许半成品)
+    """
+    extra = defaultdict(dict)
+    errors = []
+    for mp in multipage:
+        fname = mp.get("file", "")
+        seg = str(mp.get("seg", ""))
+        slot = int(mp.get("slot", -1))
+        pages = mp.get("pages", {}) or {}
+        if slot < 0 or not pages:
+            continue
+        max_p = max(int(p) for p in pages)
+        if max_p < 2:
+            continue
+        hex_list = [""] * (max_p - 1)
+        for pno, tgt in pages.items():
+            pi = int(pno)
+            if pi < 2 or not tgt:
+                continue
+            try:
+                enc = encode_text(tgt, fname, alloc)
+            except ValueError as exc:
+                errors.append(str(exc))
+                continue
+            hex_list[pi - 2] = enc.hex()
+        extra[(fname, seg)][slot] = hex_list
+    if errors:
+        raise RuntimeError(
+            "多页翻译编码失败: %d 处未映射字符, 首条: %s" % (len(errors), errors[0])
+        )
+    return extra
+
+
 def patch_bin(original_bin_path, workbook_path, output_path,
               alloc_path=None, font_path=None, threshold=96,
-              auto_alloc=False, allow_unknown_image=False):
+              auto_alloc=False, allow_unknown_image=False,
+              multipage_path=None):
     """一键导入: 读取翻译 → 编码 → 生成字模 → 写入 BIN。
 
     Args:
@@ -527,6 +571,15 @@ def patch_bin(original_bin_path, workbook_path, output_path,
     n_nonempty = sum(1 for et in encoded_texts if et["encoded_hex"])
     print("  编码: %d 条 (非空 %d)" % (len(encoded_texts), n_nonempty))
 
+    # 多页翻译 (CHANGELOG v0.8: 全项目多页修复, 尾页不再丢失)
+    extra_by_fileseg = defaultdict(dict)
+    if multipage_path and os.path.exists(multipage_path):
+        with open(multipage_path, "r", encoding="utf-8") as f:
+            multipage = json.load(f)
+        extra_by_fileseg = encode_extra_pages(multipage, alloc)
+        n_mp_slots = sum(len(v) for v in extra_by_fileseg.values())
+        print("  多页翻译: %d 槽 (%d 文件段)" % (n_mp_slots, len(extra_by_fileseg)))
+
     # [6/6] 写入 BIN
     print("\n[6/6] 写入 BIN 镜像...")
     files = list_iso_files(bytes(iso_data))
@@ -562,9 +615,10 @@ def patch_bin(original_bin_path, workbook_path, output_path,
             if key not in enc_by_fileseg:
                 continue
 
-            # 建议14/15: ID 精确匹配
+            # 建议14/15: ID 精确匹配; extra_pages: 多页翻译 (v0.8)
             encoded_map = build_encoded_map(enc_by_fileseg[key])
-            new_seg_data = build_text_segment(seg["data"], vals, encoded_map)
+            new_seg_data = build_text_segment(seg["data"], vals, encoded_map,
+                                              extra_pages=extra_by_fileseg.get(key))
 
             new_size = len(new_seg_data)
             new_padded = new_size + (-new_size % DSZ)
@@ -721,9 +775,18 @@ def main():
                         help="二值化阈值 (建议4, 默认96)")
     parser.add_argument("--auto-alloc", action="store_true",
                         help="允许自动重新分配字库 (不推荐, 违反建议22)")
+    parser.add_argument("--multipage", default=None,
+                        help="多页翻译 JSON (默认: 自动查找 ../data/multi_page_translations.json)")
     parser.add_argument("--allow-unknown-image", action="store_true",
                         help="允许 SHA256 与目标镜像不同的 dump")
     args = parser.parse_args()
+
+    if not args.multipage:
+        default_mp = os.path.join(
+            os.path.dirname(__file__), "..", "data", "multi_page_translations.json"
+        )
+        if os.path.isfile(default_mp):
+            args.multipage = default_mp
 
     if not args.font:
         # 尝试从项目目录默认查找
@@ -746,6 +809,7 @@ def main():
         threshold=args.threshold,
         auto_alloc=args.auto_alloc,
         allow_unknown_image=args.allow_unknown_image,
+        multipage_path=args.multipage,
     )
 
 

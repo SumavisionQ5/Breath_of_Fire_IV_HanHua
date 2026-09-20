@@ -3,10 +3,10 @@ AIGC:
   ContentProducer: '001191110102MAD55U9H0F10002'
   ContentPropagator: '001191110102MAD55U9H0F10002'
   Label: '1'
-  ProduceID: '5b507058-65d9-472a-8bcb-3aeaf88f8d79'
-  PropagateID: '5b507058-65d9-472a-8bcb-3aeaf88f8d79'
-  ReservedCode1: '7a05989c-1b9b-4edc-ad62-aba1b74f6d42'
-  ReservedCode2: '7a05989c-1b9b-4edc-ad62-aba1b74f6d42'
+  ProduceID: 'ce5fd050-8cc8-4b8f-ac11-e3c6433e0077'
+  PropagateID: 'ce5fd050-8cc8-4b8f-ac11-e3c6433e0077'
+  ReservedCode1: 'f5874e2a-76bc-424f-8822-2077e7fd54cb'
+  ReservedCode2: 'f5874e2a-76bc-424f-8822-2077e7fd54cb'
 ---
 
 # 龙战士4 (Breath of Fire IV) 简体中文汉化项目
@@ -15,7 +15,7 @@ AIGC:
 > 全量文本提取、全量重译、字库像素布局逆向、字模生成与镜像写入工具链。
 > 本仓库包含全部译文、工具、破解文档，供后续接手者完整复现。
 
-## 当前状态 (2026-09-18)
+## 当前状态 (2026-09-20)
 
 | 模块 | 状态 | 说明 |
 |------|------|------|
@@ -23,14 +23,20 @@ AIGC:
 | 全量重译 | ✅ 完成 | 15,049 条非空文本 100% 译完，24 批 TSV 定稿 |
 | 译文校验 | ✅ 完成 | 控制码/换行/分隔线逐条一致，0 假名残留，0 缺译 |
 | 字库布局逆向 | ✅ 完成 | 21 列网格 + 低 nibble 在左（经 VRAM 转储逐字节验证） |
-| 字模方案 | ✅ 完成 | XP 宋体 12px 点阵 + 右下 2 向细描边（v12 定稿） |
-| 模拟器验证 | ✅ 通过 | v12 验证镜像中文显示正常（沙漠流星场景） |
-| **字库容量** | ❌ **未解决** | 全量译文 2,087 唯一字符 > 原版架构容量，见下文「核心瓶颈」 |
+| **字库容量** | ✅ **已解决** | 4 套 1bpp CLUT 分页（路径 E 已实施，v15 全量构建落地） |
+| **全量汉化镜像** | ✅ **已生成** | v15 全量（对话/剧情）+ v16e 系统文本回填，实测通过 |
+| 系统文本回填 | ✅ v16e | 62 条存档/读档/设置/命名译文实测通过；其余 1,138 条已译，待回填 (v16f) |
+| 字模方案 | ✅ 完成 | XP 宋体 12px 点阵；描边 8 邻域环（v16e 实证修正） |
+| 模拟器验证 | ✅ 通过 | v16e 命名界面白字芯+暗描边清晰可读，标题/立绘图形无回归 |
 
-⚠️ **全量汉化镜像尚不可生成**：翻译与显示技术均已就绪，但字库容量模型需重新设计。
-接手者请先阅读 [docs/cracking_analysis.md](docs/cracking_analysis.md) 与下文「核心瓶颈」。
+当前基线镜像 `bof4_chinese_v16e.bin`（740,731,544 B，SHA256 eeada38a…）：
+v15 全量汉化（对话/剧情/4 套字库分页）+ v16e 系统文本回填（DEMO seg2 62 条译文 +
+SYSTEM 字库 V1 描边/V9 白芯打包 + INIT win0[9] 白化）。构建方法见下文
+「构建全量汉化镜像 (v15/v16e)」；v16 技术定案见
+[docs/v16_system_text_backfill.md](docs/v16_system_text_backfill.md) 与
+[CHANGELOG.md](CHANGELOG.md) v0.8.2。
 
-## 核心瓶颈：字库容量
+## 字库容量问题（已解决：路径 E，4 套 CLUT 分页，v15 实施）
 
 原版字库架构（21 列布局实测值）：
 
@@ -56,10 +62,12 @@ AIGC:
 - **路径 B**：精简用字后零搬移——翻译时限制字符集（如限用 1,500 常用字）
 - **路径 C**：扩容搬移——字库段扩到 53,248 字节/段（工具 `emi_expand.py` 已就绪，镜像会变大）
 - **路径 D**：定位小字库字形资源（可再 +225 槽，但仍不足以覆盖 685 需求，需与其他路径组合）
-- **路径 E★**：多套字形共享像素（CLUT 分页）——两/四套字形打包同一 12×12 槽，
+- **路径 E★（已实施）**：多套字形共享像素（CLUT 分页）——四套字形打包同一 12×12 槽，
   运行时用游戏原生的 `{色XX}` 调色板窗口切换（64 窗口）决定可见套。静态逆向已证实
   渲染链路无预光栅化缓存、逐字 CLUT 字段运行时可变、调色板内容来自我们可控的 EMI CLUT 段
-  → **容量 ×2（保描边）/×4（零搬移吃下全量译文），详见 `docs/clut_banking_design.md`**
+  → **容量 ×4，零搬移吃下全量译文**。详见 `docs/clut_banking_design.md`；
+  **v15 起已在全量镜像中落地**（4 套架构：全局池 330×4 + 场景区 (cap-330)×4 +
+  原生色码强制套 + 套切换码，v15 构建脚本 `tools/bof4_v15_full_build.py`）
 
 ## 项目结构
 
@@ -67,7 +75,7 @@ AIGC:
 bof4-chinese/
 ├── README.md                    # 本文件
 ├── README_EN.md                 # 英文说明
-├── CHANGELOG.md                 # 变更日志 (v0.1~v0.4)
+├── CHANGELOG.md                 # 变更日志 (v0.1~v0.8.2)
 ├── LICENSE                      # MIT
 ├── translation_workbook.json    # 翻译工作簿 (17,676 条, 已含全量定稿译文)
 │
@@ -75,7 +83,8 @@ bof4-chinese/
 │   ├── tsv/                     # ★ 24 批翻译 TSV (定稿译文, 翻译协作主载体)
 │   │   ├── batch_01~24.tsv      #   id / file / seg / src(日文) / tgt(中文)
 │   │   ├── SPEC.md              #   翻译规范 (假名禁用/音译表/术语表/控制码表)
-│   │   └── TSV_README.md        #   TSV 使用说明
+│   │   ├── TSV_README.md        #   TSV 使用说明
+│   │   └── system_text/         #   ★ 系统文本 (62 条已回填 v16e + 1,138 条已译待回填 v16f)
 │   ├── original_japanese.txt    # ★ 原文解码全文 (多页版, 零占位符, v0.6 重建)
 │   ├── translated_chinese.txt   # 译文对照全文 (JP/CN 逐条)
 │   └── original_hex_comparison.txt  # hex+解码逐条对照 (多页版, v0.6 重建)
@@ -96,18 +105,28 @@ bof4-chinese/
 │   ├── analyze_font_usage.py    # 字符用量分析 (字库分配方案生成)
 │   ├── analyze_slps.py          # SLPS_027.28 逆向分析 (需 capstone)
 │   ├── make_patch.py            # BDIF 差异补丁生成
-│   └── apply_patch.py           # BDIF 补丁应用
+│   ├── apply_patch.py           # BDIF 补丁应用
+│   ├── bof4_v15_full_build.py   # ★ v15 全量镜像构建 (4 套 CLUT 分页架构)
+│   ├── bof4_v16e_build.py       # ★ v16e = v15 + 系统文本回填 (DEMO seg2 + seg4 池复制)
+│   ├── bof4_v16e_demo_verify.py # ★ v16e DEMO/SYSTEM 专项验证
+│   ├── bof4_v16e_full_verify.py # ★ v16e 全量读回验证 (470 EMI / CLUT / 字库)
+│   ├── bof4_export_remaining.py    # 系统文本未译页导出 (1,138 条)
+│   └── bof4_translate_remaining.py  # 系统文本翻译表回填 TSV (v16f 用)
 │
 ├── data/
 │   ├── font_alloc_v2.json       # 字库分配方案 (基于旧译文, 供参考)
+│   ├── font_alloc_4set.json     # ★ v15 4 套字库分配 (v15/v16e 构建实际使用)
+│   ├── font_alloc_4set_v16.json # v16 4 套字库分配 (v16e 验证用)
 │   ├── font_segments_report.json# 297 个字库段扫描报告
 │   ├── main_font_index.csv      # 原版主字库索引对照
 │   ├── small_font_index.csv     # 原版小字库索引对照
 │   ├── scene_map_original.json  # ★ 原版场景字库映射 5,388 条 (锚点+指纹+人工)
+│   ├── multi_page_translations.json # ★ 多页槽页 2+ 译文 (v0.8, 34 页)
 │   └── text_blocks_original.json# 原始文本块 (hex+解码, 多页版, v0.6 重建)
 │
 ├── docs/
 │   ├── cracking_analysis.md     # ★ 破解技术文档 (格式/编码/字库/容量, 含修正记录)
+│   ├── v16_system_text_backfill.md # ★ v16 系统文本回填技术定案 (seg2/CLUT/字形规范)
 │   ├── translation_guide.md    # 翻译规范与术语基准
 │   ├── slps_reverse_engineering.md # SLPS 逆向报告 (字库加载路径)
 │   ├── font_source_experiment.md  # 字体来源实验记录
@@ -118,6 +137,7 @@ bof4-chinese/
 │   ├── test_codec.py            # 编码/解码测试 (12 项)
 │   ├── test_font_roundtrip.py   # 21 列布局测试 (7 项)
 │   ├── test_alloc.py            # 分配一致性测试 (14 项)
+│   ├── test_multipage.py        # 多页文本段重组测试 (10 项, v0.8)
 │   └── minimal_workbook.json
 │
 └── patch/                       # 历史补丁 (基于旧译文构建, 仅作参考)
@@ -173,13 +193,34 @@ python tools/patch_bin.py "<原版镜像>.bin" translation_workbook.json 输出.
     --font C:/Windows/Fonts/simsun.ttc
 ```
 
-> 注意：`--alloc` 方案基于旧译文的字符集，全量新译文会触发容量报错——
-> 这正是「核心瓶颈」。解决容量问题后此命令即可端到端产出镜像。
+> 注意：`patch_bin.py` 为 v0.x 单场景验证时代的工具（基于旧译文字符集的分配方案）。
+> **全量构建已改走 v15/v16e 构建链**，见下一节。
 > 字体推荐 **Windows XP 宋体 simsun.ttc**（12px 内置点阵字形，纯黑白无抗锯齿失真）。
 
-### 翻译场景级验证镜像（技术已验证）
+### 构建全量汉化镜像 (v15/v16e，当前基线)
 
-生成只汉化单个场景、其余保持原样的最小验证镜像（当前技术验证方式）：
+```bash
+# v16e 构建 = 内部先跑 v15 全量构建 (import bof4_v15_full_build)
+#           + DEMO seg2 62 条系统文本回填 + SYSTEM 字库 V1描边/V9白芯打包 + INIT win0[9] 白化
+python tools/bof4_v16e_build.py
+
+# 双重静态验证 (纯读, 不写镜像)
+python tools/bof4_v16e_demo_verify.py
+python tools/bof4_v16e_full_verify.py
+```
+
+产出 `bof4_chinese_v16e.bin`（740,731,544 B，SHA256 eeada38a…）。
+构建输入：原版日版镜像、`translation_workbook.json`、`data/font_alloc_4set.json`、
+62 条系统文本 TSV、simsun.ttc。脚本头部路径为本机配置，接手者按需调整；
+架构细节见 [docs/v16_system_text_backfill.md](docs/v16_system_text_backfill.md)。
+
+v16f（规划）：回填已翻译的 1,138 条系统文本
+（`texts/tsv/system_text/system_text_remaining_translated.tsv`），
+需先适配 COMMU03/SGAMEN/SHOP 的非标准 seg2 表结构（tbl[0]≠512）。
+
+### 翻译场景级验证镜像（历史验证方式，v12 时代）
+
+生成只汉化单个场景、其余保持原样的最小验证镜像：
 
 ```bash
 python tools/patch_bin.py "<原版镜像>.bin" translation_workbook.json 验证.bin \
@@ -222,7 +263,7 @@ glyph i 位置: col = i % 21, row = i // 21 (×12px)
 低 nibble 在左时孤立像素率 0.0036，高 nibble 在左时 0.0969（差 27 倍），
 后者在游戏内表现为「奇偶列错位碎片」。
 
-### 3. 字模值语义 + 描边（v12 定稿）
+### 3. 字模值语义 + 描边（v12 定稿，v16e 实证修正）
 
 | 值 | 含义 |
 |----|------|
@@ -232,6 +273,14 @@ glyph i 位置: col = i % 21, row = i // 21 (×12px)
 
 纯值 1 无描边时，白字在浅色背景上会「偶尔不显示」（与原版日文字形对比确认）。
 三版对比（无描边 / 3 向粗描边 / 右下 2 向细描边）定稿为**右下 2 向细描边**。
+
+**v16e 实证修正**：对原版字形（INIT seg7）像素值统计显示双峰
+**V=1 (24.9%，暗描边) + V=8 (25.9%，亮字芯)**，9-15 为零；描边结构 ≈ **8 邻域环**
+（80.9% 覆盖，非「右下 2 向」）。文字调色板 = INIT seg1 win0：
+[1]=(7,7,7) 暗描边、**[8]=(19,19,15) 恰为命名界面面板底色（绝不能动）**、
+[9]=(20,21,22) 灰阶峰值。v16e 系统字库打包：描边→V=1 + 字芯→V=9 +
+INIT seg1/3/4 win0[9] 白化 7FFF。详见
+[docs/v16_system_text_backfill.md](docs/v16_system_text_backfill.md)。
 
 ### 4. 字库加载路径（SLPS 逆向确认）
 
@@ -261,6 +310,11 @@ glyph i 位置: col = i % 21, row = i // 21 (×12px)
 | 字节 B (0x21-0x7E) | 小字库索引 B-32 |
 | 字节 B (<0x21) | 控制码（17 种，`{框}` `{立绘}` `{引2}` 等，翻译时原样保留） |
 
+**系统文本（seg2）编码与主文本不同**（v16 破译，详见
+[docs/v16_system_text_backfill.md](docs/v16_system_text_backfill.md)）：
+单字节 0x20-0xFF → 小字库 idx 0-223；`0x15 XX` → 图标码（×=15 01 △=15 02 □=15 03 』=15 0A）；
+`0x12/0x13` → 主字库全局池。
+
 ### 7. 小字库：独立资源，位置未定位
 
 小字库（索引 0-61 为 ASCII/标点/假名固有位）的字形数据在全部 297 个
@@ -283,12 +337,16 @@ glyph i 位置: col = i % 21, row = i // 21 (×12px)
 
 ## 接手指南
 
-1. **先读文档**：`docs/cracking_analysis.md`（全部格式/布局/容量事实）→ 本 README「核心瓶颈」→ `docs/clut_banking_design.md`（路径 E）
-2. **跑测试**：`python -m unittest discover -s tests` 确认环境正常
+1. **先读文档**：`docs/cracking_analysis.md`（格式/布局/容量事实）→
+   `docs/clut_banking_design.md`（路径 E 架构）→
+   `docs/v16_system_text_backfill.md`（v16 系统文本技术定案）→ [CHANGELOG.md](CHANGELOG.md)
+2. **跑测试**：`python -m unittest discover -s tests` 确认环境正常（v0.8 起 53 项，含多页重组测试）
 3. **验证字库**：`dump_font.py` + `import_font.py` round-trip，确认布局理解正确
-4. **选容量路径**：A/B/C/D/E（见上；E = CLUT 分页，静态验证已通过，待 v13 原型实验，
-   见 `docs/clut_banking_design.md`）
-5. **构建镜像**：容量方案确定后，`merge_tsv.py` → `patch_bin.py` 端到端
+4. **复现基线**：`tools/bof4_v16e_build.py` 构建 → `bof4_v16e_demo_verify.py` +
+   `bof4_v16e_full_verify.py` 双验证 → 与当前基线 SHA256 比对
+5. **继续 v16f**：回填 `texts/tsv/system_text/system_text_remaining_translated.tsv` 的
+   1,138 条译文（需适配 COMMU03/SGAMEN/SHOP 非标准 seg2 表结构），或继续场景文字描边/
+   VRAM 字体上传变换逆向（见 CHANGELOG v0.8.2 已知边界）
 6. **模拟器实测**：推荐 RetroArch (PCSX-ReArmed) / DuckStation
 
 ## 致谢

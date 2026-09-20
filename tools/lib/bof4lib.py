@@ -182,10 +182,11 @@ CTRL_CODES = {
     "打字": 0x10, "延时": 0x16, "立绘": 0x17, "色": 0x05,
     "引2": 0x19, "引": 0x18, "金钱": 0x1c,
     "符号2": 0x15,
+    "特效": 0x0d, "/特效": 0x0f, "/色": 0x06, "等待": 0x1b,
     # 语义未定位的控制码 (参数已实证, 名字保证可逆)
     "码03": 0x03, "码08": 0x08, "码0A": 0x0a, "码0B": 0x0b,
-    "码11": 0x11, "码14": 0x14, "码1A": 0x1a, "码1D": 0x1d,
-    "码1E": 0x1e, "码1F": 0x1f,
+    "码0E": 0x0e, "码11": 0x11, "码14": 0x14, "码1A": 0x1a,
+    "码1D": 0x1d, "码1E": 0x1e, "码1F": 0x1f,
 }
 
 # 控制码长度表 (字节码 → 码+参数总字节数)
@@ -653,34 +654,41 @@ def encode_text(tgt, fname, alloc):
 # 文本段构建 (建议 14/15: ID 精确匹配)
 # ============================================================
 
-def build_text_segment(orig_seg_data, vals, encoded_list):
-    """用编码文本构建新的文本段。
+def build_text_segment(orig_seg_data, vals, encoded_list, extra_pages=None):
+    """用编码文本构建新的文本段 (页级多页保留, v13.1 全项目版)。
 
     遍历逻辑与导出脚本严格对称:
       - 空槽 (e <= s) → b'\x00', 不消耗编码列表
-      - 空字符串 (trim 后为空) → b'\x00', 不消耗
+      - 全零槽 / 空字符串 (trim 后为空) → b'\x00', 不消耗
       - 非空字符串 → 按序消耗 encoded_list 的下一项 (导出顺序 = 工作簿顺序)
 
-    匹配方式说明 (建议14/15 的落地):
-      工作簿的 id 是全局编号 (非段内序号), 且导出时跳过空槽/空串,
-      因此可靠的匹配是"非空字符串顺序 ↔ 编码列表顺序";
-      列表耗尽或剩余时立即报错, 禁止静默错位。
+    多页语义 (2026-09-19 全项目多页修复):
+      每个指针槽跨度内含多个 0x00 分隔的"页" (split_pages 切分)。
+      - 页 1 = encoded_list 对应项: 非空 → 新编码; 空 → 原页 1 逐字节保留
+      - 页 2+ = extra_pages[k] 依序提供: 非空 → 新编码; 缺失/空 → 原页保留
+      - 尾 0x00 (trailing_nul 存储空位) 结构原样保留
+      即未翻译页/空页/纯控制码页自动逐字节保留, 空译文槽整槽保留原文
+      (取代旧版"清空为 b'\x00'"与"尾页丢失"两种缺陷行为, 见 CHANGELOG v0.8)。
 
     Args:
         orig_seg_data: bytes, 原始段数据
         vals: tuple, 原始指针表
         encoded_list: list[str], 按 (file, seg) 分组且保持工作簿顺序的 encoded_hex 列表
+            (每非空槽一条首页编码; 空字符串 = 该槽保留原文)
+        extra_pages: dict[int, list[str]] | None, {槽索引 k: [页2 hex, 页3 hex, ...]}
+            (页号 p 的编码位于列表 p-2 处; 空字符串 = 该页保留原文)
 
     Returns:
         bytes: 新的段数据 (指针表 + 文本数据)
 
     Raises:
-        ValueError: 编码列表耗尽 (非空字符串多于翻译条目)
+        ValueError: 编码列表耗尽或未耗尽 (导出顺序与工作簿不一致)
     """
     n = len(vals)
     ptsize = n * 2
     new_strings = []
     enc_idx = 0
+    extra_pages = extra_pages or {}
 
     for k in range(n):
         s = vals[k]
@@ -706,15 +714,37 @@ def build_text_segment(orig_seg_data, vals, encoded_list):
         enc_hex = encoded_list[enc_idx]
         enc_idx += 1
 
-        if not enc_hex:
-            # 翻译为空 → 保持空字符串
-            new_strings.append(b'\x00')
-            continue
+        # ---- 页级重组 (split_pages 恒等式: b'\x00'.join(pages) == raw) ----
+        # trailing 判定必须与 export_text.py 一致: 尾空元素存在 + raw 以 0x00 结尾。
+        # 仅凭 endswith 判定会误伤"页内容本身以 0x00 结尾"的槽
+        # (如 0x18 09 00 的参数字节, AREAD116 seg11 slot8 实证)。
+        pages = split_pages(raw)
+        trailing = bool(pages and pages[-1] == b'' and raw.endswith(b'\x00'))
+        if trailing:
+            pages = pages[:-1]          # 尾空元素 = 终止符后的存储空位, 非真实页
 
-        raw_enc = bytes.fromhex(enc_hex)
-        if not raw_enc or raw_enc[-1] != 0x00:
-            raw_enc = raw_enc + b'\x00'
-        new_strings.append(raw_enc)
+        extra = extra_pages.get(k) or []
+        new_pages = []
+        for pi, orig_page in enumerate(pages):
+            if pi == 0:
+                h = enc_hex
+            elif pi - 1 < len(extra):
+                h = extra[pi - 1]
+            else:
+                h = ''
+            if h:
+                # 页内容不含终止符 (encode_text 输出 / 原始页 hex 均如此),
+                # 终止符由 join 统一提供。注意不可 strip 尾 0x00:
+                # 页内容合法地以 0x00 结尾的场景 (如 0x12 00 = 字库索引 0 的
+                # 参数字节) 会被误剥 (AREAD113 slot0 实证), 破坏恒等性。
+                new_pages.append(bytes.fromhex(h))
+            else:
+                new_pages.append(orig_page)
+
+        new_raw = b'\x00'.join(new_pages)
+        if trailing:
+            new_raw += b'\x00'
+        new_strings.append(new_raw)
 
     # 防御: 编码列表未耗尽 (翻译条目多于非空字符串) → 报错
     if enc_idx != len(encoded_list):
