@@ -3,10 +3,10 @@ AIGC:
   ContentProducer: '001191110102MAD55U9H0F10002'
   ContentPropagator: '001191110102MAD55U9H0F10002'
   Label: '1'
-  ProduceID: '9ee65c80-20fe-4fb6-a1f5-ed4f66c82c5b'
-  PropagateID: '9ee65c80-20fe-4fb6-a1f5-ed4f66c82c5b'
-  ReservedCode1: '84576f3e-56a4-4377-9320-90d5ff0db2a6'
-  ReservedCode2: '84576f3e-56a4-4377-9320-90d5ff0db2a6'
+  ProduceID: 'b117a8b6-5759-4d8d-9057-8ccc2c25d67d'
+  PropagateID: 'b117a8b6-5759-4d8d-9057-8ccc2c25d67d'
+  ReservedCode1: '9d6993bb-a6b6-4f20-be30-d0cb0d37dcbd'
+  ReservedCode2: '9d6993bb-a6b6-4f20-be30-d0cb0d37dcbd'
 ---
 
 # Breath of Fire IV — Simplified Chinese Translation Project
@@ -92,6 +92,8 @@ bof4-chinese/
 │   │   ├── SPEC.md              #   Translation spec (kana ban, transliteration, glossary, control codes)
 │   │   ├── TSV_README.md        #   TSV usage notes
 │   │   └── system_text/         #   ★ System text (62 backfilled in v16e + 1,138 translated, pending v16f)
+│   ├── review_jp_cn_full.html   # ★ Full JP/CN review doc (18,876 strings; search / file filter / issues-only)
+│   ├── review_jp_cn_system.html #   System-text JP/CN review doc (1,200 strings)
 │   ├── original_japanese.txt    # Full decoded original text (multi-page, v0.6 rebuild)
 │   ├── translated_chinese.txt   # Full JP/CN parallel text
 │   └── original_hex_comparison.txt

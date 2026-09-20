@@ -3,10 +3,10 @@ AIGC:
   ContentProducer: '001191110102MAD55U9H0F10002'
   ContentPropagator: '001191110102MAD55U9H0F10002'
   Label: '1'
-  ProduceID: 'ce5fd050-8cc8-4b8f-ac11-e3c6433e0077'
-  PropagateID: 'ce5fd050-8cc8-4b8f-ac11-e3c6433e0077'
-  ReservedCode1: 'f5874e2a-76bc-424f-8822-2077e7fd54cb'
-  ReservedCode2: 'f5874e2a-76bc-424f-8822-2077e7fd54cb'
+  ProduceID: 'f62f476a-8402-4ded-bb2c-dbb3d10566f9'
+  PropagateID: 'f62f476a-8402-4ded-bb2c-dbb3d10566f9'
+  ReservedCode1: '8744a3cc-3174-4c34-b682-83f6138c87a5'
+  ReservedCode2: '8744a3cc-3174-4c34-b682-83f6138c87a5'
 ---
 
 # 龙战士4 (Breath of Fire IV) 简体中文汉化项目
@@ -85,6 +85,8 @@ bof4-chinese/
 │   │   ├── SPEC.md              #   翻译规范 (假名禁用/音译表/术语表/控制码表)
 │   │   ├── TSV_README.md        #   TSV 使用说明
 │   │   └── system_text/         #   ★ 系统文本 (62 条已回填 v16e + 1,138 条已译待回填 v16f)
+│   ├── review_jp_cn_full.html   # ★ 全量中日对照审校文档 (18,876 条, 搜索/文件过滤/只看问题)
+│   ├── review_jp_cn_system.html #   系统文本中日对照审校文档 (1,200 条)
 │   ├── original_japanese.txt    # ★ 原文解码全文 (多页版, 零占位符, v0.6 重建)
 │   ├── translated_chinese.txt   # 译文对照全文 (JP/CN 逐条)
 │   └── original_hex_comparison.txt  # hex+解码逐条对照 (多页版, v0.6 重建)
