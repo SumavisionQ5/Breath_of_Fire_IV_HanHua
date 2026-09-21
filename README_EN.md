@@ -3,10 +3,10 @@ AIGC:
   ContentProducer: '001191110102MAD55U9H0F10002'
   ContentPropagator: '001191110102MAD55U9H0F10002'
   Label: '1'
-  ProduceID: 'b117a8b6-5759-4d8d-9057-8ccc2c25d67d'
-  PropagateID: 'b117a8b6-5759-4d8d-9057-8ccc2c25d67d'
-  ReservedCode1: '9d6993bb-a6b6-4f20-be30-d0cb0d37dcbd'
-  ReservedCode2: '9d6993bb-a6b6-4f20-be30-d0cb0d37dcbd'
+  ProduceID: 'c570ddf3-284e-46d1-afcb-7e187a8b8bb4'
+  PropagateID: 'c570ddf3-284e-46d1-afcb-7e187a8b8bb4'
+  ReservedCode1: 'c685f49a-d772-4e1a-99a5-ab0a93718909'
+  ReservedCode2: 'c685f49a-d772-4e1a-99a5-ab0a93718909'
 ---
 
 # Breath of Fire IV — Simplified Chinese Translation Project
@@ -18,19 +18,25 @@ AIGC:
 > This repository contains all translations, tools, and reverse-engineering docs
 > so that future contributors can fully reproduce the work.
 
-## Current Status (2026-09-20)
+## Current Status (2026-09-22)
 
 | Module | Status | Notes |
 |--------|--------|-------|
 | Text extraction | ✅ Done | 17,676 strings / 270 text segments / 262 EMI files |
 | Full retranslation | ✅ Done | 15,049 non-empty strings, 100%, finalized in 24 TSV batches |
-| Translation QA | ✅ Done | Control codes / newlines / separators all consistent, 0 kana, 0 missing |
+| **Translation proofread** | ✅ **Fully complete** | **All 17,676 strings proofread batch-by-batch (v0.8.4): newlines / control codes / separators / same-text families / traditional chars all 0** |
 | Font layout RE | ✅ Done | 21-column grid + low-nibble-left (verified byte-by-byte against VRAM dumps) |
 | **Font capacity** | ✅ **Resolved** | 4-set 1bpp CLUT banking (Path E implemented; shipped in the v15 full build) |
 | **Full translated image** | ✅ **Built** | v15 full build (story/dialog) + v16e system-text backfill, tested in-game |
 | System text backfill | ✅ v16e | 62 save/load/settings/naming strings tested in-game; remaining 1,138 translated, backfill pending (v16f) |
 | Glyph pipeline | ✅ Done | XP SimSun 12px bitmap; outline = 8-neighborhood ring (corrected in v16e) |
 | Emulator test | ✅ Passed | v16e naming screen: white core + dark outline clearly readable; title/graphics no regression |
+
+> **v0.8.4 proofread milestone**: all 17,676 strings fully proofread one by one, plus four
+> final rulings ("王女さま" titles unified to "Princess", 下取り family unified to "let the shop
+> take it" / "reclaim", 009501/009629 trailing particles removed). All 4,459 same-text
+> families are 100% consistent; traditional/Japanese kanji residue: 0. See
+> [CHANGELOG.md](CHANGELOG.md) v0.8.4.
 
 Current baseline image `bof4_chinese_v16e.bin` (740,731,544 B, SHA256 eeada38a…):
 the v15 full localization (story/dialog, 4-set font banking) plus the v16e system-text
