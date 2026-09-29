@@ -30,7 +30,7 @@ from emi_expand import write_emi_to_iso, expand_emi_in_iso
 import bof4_v15_full_build as v15
 
 ISO = r"D:\龙战士\Breath of Fire IV - Utsurowazaru Mono (Japan).bin"
-OUT = r"D:\龙战士\bof4_chinese_v16e.bin"
+OUT = r"D:\龙战士\bof4_chinese_v17.bin"
 V15_ALLOC = REPO + r"\data\font_alloc_4set.json"
 TSV = os.path.join(TEMP, "system_text.tsv")
 DEMO = "SYSTEM/DEMO.EMI"
@@ -340,6 +340,135 @@ def rebuild_seg2(tbl, spans, mapping, g0, demo_s0):
     return bytes(out), new_tbl, audit, old2new
 
 # ============================================================
+# v17: 屏蔽式 CLUT 代码注入 (EXE patch)
+# ============================================================
+
+def patch_exe_clut(iso):
+    """把"屏蔽式 CLUT"注入函数写进 SLPS_027.28 的文字调色板上传函数。
+
+    原理 (v0.8.13~16 全链路实证):
+      - 上传函数 0x8013769C 每次把工作区 0x80032000 上传到
+        VRAM (0,240,256,16) = 文字调色板行240-255
+      - 在它上传前注入改写工作区行0/行1 的 16 个窗口为"屏蔽式"
+        (每窗只放行对应套 bit: 套0=bit0/套1=bit1/套2=bit2/套3=bit3)
+        → 4 套字形叠加于同一 4bpp glyph 时不再叠影 (state14/15 实证)
+      - 背景调色板在 VRAM 行242-255 (工作区行2-15) → 不受影响 (state9/10 实证)
+      - 源区 0x8002E000 / INIT.EMI 数据一律不动 (背景+系统共享, state11 实证)
+      - 系统文字字芯 V=9 含 bit0 → 屏蔽 win0 后依然显示白 (可读)
+    """
+    import struct as _st
+    from bof4lib import parse_dir, DSZ, read_file_from_iso, write_file_to_iso
+
+    LOAD, FOFF = 0x800F0800, 0x800
+    INJECT_AT = 0x801376DC      # addiu $v0,$zero,16 (上传前最后一条可替换指令)
+    NEW_FUNC = 0x801BB23C       # EXE 空闲区 (4对齐; savestate 同址实证安全)
+    WHITE, ZERO = 0x7FFF, 0x0000
+
+    def win_bit(win):
+        """窗口 -> 放行套 bit (复刻 v15 rewrite_clut 语义)"""
+        if win in (0, 4, 5, 6, 7, 8, 0xA, 0xD): return 0
+        if win in (1, 9): return 1
+        if win in (2, 0xB): return 2
+        if win in (3, 0xC): return 3
+        return None            # 0xE/0xF 不改写
+
+    def clut_words(win):
+        b = win_bit(win)
+        if b is None:
+            return None
+        ws = []
+        for w in range(8):
+            lo = WHITE if ((w * 2) >> b) & 1 else ZERO
+            hi = WHITE if ((w * 2 + 1) >> b) & 1 else ZERO
+            ws.append((hi << 16) | lo)
+        return ws
+
+    def mk_addiu(rt, rs, imm): return (0x09 << 26) | (rs << 21) | (rt << 16) | (imm & 0xFFFF)
+    def mk_lui(rt, imm):       return (0x0F << 26) | (rt << 16) | (imm & 0xFFFF)
+    def mk_ori(rt, rs, imm):   return (0x0D << 26) | (rs << 21) | (rt << 16) | (imm & 0xFFFF)
+    def mk_sw(rt, off, rs):    return (0x2B << 26) | (rs << 21) | (rt << 16) | (off & 0xFFFF)
+    def mk_jr(rs):             return (rs << 21) | 0x08
+    def mk_nop():              return 0
+    def mk_jal(t):             return (0x03 << 26) | ((t >> 2) & 0x3FFFFFF)
+
+    def build(rows):
+        code = [mk_addiu(2, 0, 16),          # 补回被替换的原指令 (delay slot 需要 $v0=16)
+                mk_lui(8, 0x8003), mk_addiu(8, 8, 0x2000),   # $t0 = 0x80032000
+                mk_lui(11, 0x7FFF), mk_ori(11, 11, 0x7FFF)]  # $t3 = 0x7FFF7FFF
+        for row in rows:
+            rb = row * 512
+            for win in range(16):
+                ws = clut_words(win)
+                if ws is None:
+                    continue
+                base = rb + win * 32
+                i = 0
+                while i < 8:
+                    w = ws[i]
+                    j = i
+                    while j < 8 and ws[j] == w:
+                        j += 1
+                    cnt, off = j - i, base + i * 4
+                    if w == 0:
+                        for m in range(cnt):
+                            code.append(mk_sw(0, off + m * 4, 8))
+                    elif w == 0x7FFF7FFF:
+                        for m in range(cnt):
+                            code.append(mk_sw(11, off + m * 4, 8))
+                    elif w == 0x7FFF0000:
+                        code.append(mk_lui(9, 0x7FFF))
+                        for m in range(cnt):
+                            code.append(mk_sw(9, off + m * 4, 8))
+                    else:
+                        code.append(mk_lui(9, (w >> 16) & 0xFFFF))
+                        if w & 0xFFFF:
+                            code.append(mk_ori(9, 9, w & 0xFFFF))
+                        for m in range(cnt):
+                            code.append(mk_sw(9, off + m * 4, 8))
+                    i = j
+        code += [mk_jr(31), mk_nop()]
+        return code
+
+    # 定位 SLPS_027.28
+    root = parse_dir(bytes(iso), 22, DSZ)
+    slps = None
+    for nm, lba, sz, isd in root:
+        if nm.startswith("SLPS"):
+            slps = (lba, sz)
+            break
+    if slps is None:
+        raise RuntimeError("SLPS 未找到")
+
+    exe = bytearray(read_file_from_iso(bytes(iso), slps[0], slps[1]))
+    code = build([0, 1])            # 行0(VRAM240) + 行1(VRAM241)
+    o_inj = FOFF + (INJECT_AT - LOAD)
+    o_new = FOFF + (NEW_FUNC - LOAD)
+
+    cur = _st.unpack_from("<I", exe, o_inj)[0]
+    if cur != 0x24020010:
+        raise RuntimeError("注入点不匹配: 0x%08X (期望 0x24020010)" % cur)
+    if any(exe[o_new + i] for i in range(len(code) * 4 + 64)):
+        raise RuntimeError("EXE 函数区非零!")
+
+    for i, w in enumerate(code):
+        _st.pack_into("<I", exe, o_new + i * 4, w)
+    _st.pack_into("<I", exe, o_inj, mk_jal(NEW_FUNC))
+
+    chk = _st.unpack_from("<I", exe, o_inj)[0]
+    back = ((chk & 0x3FFFFFF) << 2) | 0x80000000
+    if back != NEW_FUNC:
+        raise RuntimeError("jal 校验失败: 0x%08X" % back)
+    if _st.unpack_from("<I", exe, o_inj + 4)[0] != 0xA7A00010:
+        raise RuntimeError("延迟槽被破坏")
+    if _st.unpack_from("<I", exe, o_inj + 8)[0] != 0x0C058D2E:
+        raise RuntimeError("上传 jal 被破坏")
+
+    write_file_to_iso(iso, slps[0], bytes(exe), slps[1])
+    print("  EXE 注入: 0x%08X -> jal 0x%08X (%d 指令, 行0+行1 屏蔽式CLUT)" % (
+        INJECT_AT, NEW_FUNC, len(code)))
+
+
+# ============================================================
 # 4. 主流程 (v15 流程 + seg2 注入)
 # ============================================================
 
@@ -347,7 +476,7 @@ def main():
     global SYS_ROWS
     SYS_ROWS = load_sys_tsv()
     print("=" * 64)
-    print("BOF4 v16e 全量构建: v16d + 系统文字 白芯V9/暗边V1 + INIT win0[9] 白化")
+    print("BOF4 v17 全量构建: v16e + 屏蔽式CLUT代码注入 (EXE patch) - CLUT数据全保留原版")
     print("=" * 64)
 
     fsr = json.load(open(REPO + r"\data\font_segments_report.json", encoding="utf-8"))["segments"]
@@ -491,23 +620,11 @@ def main():
         for seg in parsed["segments"]:
             sig = seg["sig"]
             if 0x8002E000 <= sig <= 0x8004E000:
-                if name == "SYSTEM/INIT.EMI":
-                    # INIT.EMI: 保留原版 CLUT + 仅 win0[9] 白化
-                    # (v16c 实证: INIT CLUT rewrite 是花屏根因; 用户实测 v16e 66822061
-                    # 全改写后标题/命名画面调色板破坏并崩溃 — 必须保留原版)
-                    d = bytearray(seg["data"])
-                    # win0[9] 额外白化 (系统文字字芯纯白, v16e 实证)
-                    if 9 * 32 + 9 * 2 + 2 <= len(d):
-                        struct.pack_into("<H", d, 9 * 32 + 9 * 2, 0x7FFF)
-                    seg_final[seg["index"]] = bytes(d)
-                    n_clut += 1
-                elif name.startswith("SYSTEM/"):
-                    # 其他 SYSTEM 文件: CLUT 保留原版 (不改写, 同 v16e 首版 1c27a950)
-                    pass
-                else:
-                    # WORLD 文件: 改写 CLUT (任意大小)
-                    seg_final[seg["index"]] = v15.rewrite_clut(seg["data"])
-                    n_clut += 1
+                # v17: 所有 CLUT 段一律保留原版
+                # 屏蔽式 CLUT 改由 EXE 代码注入实现 (上传函数上传前改写工作区行0/行1)
+                # 依据: 源区 0x8002E000 = 背景+系统共享池, 改数据必破坏背景 (state11 实证);
+                #       文字链路唯一收口 = 上传函数 0x8013769C (state14/15 实证)
+                pass
 
         fsegs = find_font_segments(parsed)
         if fsegs:
@@ -563,6 +680,9 @@ def main():
 
     new_files = {n.upper(): (l, s) for n, l, s in list_iso_files(bytes(iso))}
     v15.sync_exe_lba_table(iso, orig_files, new_files)
+
+    print("[6.5/7] EXE 屏蔽式CLUT注入...")
+    patch_exe_clut(iso)
 
     print("[7/7] 保存...")
     with open(OUT, "wb") as f:

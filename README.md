@@ -3,10 +3,10 @@ AIGC:
   ContentProducer: '001191110102MAD55U9H0F10002'
   ContentPropagator: '001191110102MAD55U9H0F10002'
   Label: '1'
-  ProduceID: 'f81d512d-17ef-4d4a-826a-06f6bb5f6f25'
-  PropagateID: 'f81d512d-17ef-4d4a-826a-06f6bb5f6f25'
-  ReservedCode1: '3bb5a2e1-6371-4607-8af7-2f02ca7b1d85'
-  ReservedCode2: '3bb5a2e1-6371-4607-8af7-2f02ca7b1d85'
+  ProduceID: '00f981d9-a97e-42d2-a0ea-16602187acad'
+  PropagateID: '00f981d9-a97e-42d2-a0ea-16602187acad'
+  ReservedCode1: 'cbdc85a4-33cb-496c-8de3-d507fb9a651b'
+  ReservedCode2: 'cbdc85a4-33cb-496c-8de3-d507fb9a651b'
 ---
 
 # 龙战士4 (Breath of Fire IV) 简体中文汉化项目
@@ -15,7 +15,7 @@ AIGC:
 > 全量文本提取、全量重译、字库像素布局逆向、字模生成与镜像写入工具链。
 > 本仓库包含全部译文、工具、破解文档，供后续接手者完整复现。
 
-## 当前状态 (2026-09-22)
+## 当前状态 (2026-09-23)
 
 | 模块 | 状态 | 说明 |
 |------|------|------|
@@ -24,22 +24,30 @@ AIGC:
 | **译文精校** | ✅ **全量完成** | **17,676 条逐批逐条校对走完（v0.8.4）：换行/控制码/分隔线/同文族/繁体字五维全 0** |
 | 字库布局逆向 | ✅ 完成 | 21 列网格 + 低 nibble 在左（经 VRAM 转储逐字节验证） |
 | **字库容量** | ✅ **已解决** | 4 套 1bpp CLUT 分页（路径 E 已实施，v15 全量构建落地） |
-| **全量汉化镜像** | ✅ **已生成** | v15 全量（对话/剧情）+ v16e 系统文本回填，实测通过 |
+| **全量汉化镜像** | ⚠️ **v17 已构建，实测排查中** | v15/v16e 存在对话叠影与场景调色板问题；v17 改为**屏蔽式 CLUT 代码注入**（删除 CLUT 数据改写），核心目标待验证 |
 | 系统文本回填 | ✅ v16e | 62 条存档/读档/设置/命名译文实测通过；其余 1,138 条已译，待回填 (v16f) |
 | 字模方案 | ✅ 完成 | XP 宋体 12px 点阵；描边 8 邻域环（v16e 实证修正） |
-| 模拟器验证 | ✅ 通过 | v16e 命名界面白字芯+暗描边清晰可读，标题/立绘图形无回归 |
+| 模拟器验证 | ⚠️ **进行中** | v17 镜像待验证；savestate 级已实证「代码注入改写 VRAM 行240」生效，实测问题排查中 |
 
 > **v0.8.4 全量精校里程碑**：17,676 条逐批逐条校对全部走完，并完成四项终裁
 > （"王女さま"→统一公主、下取り系→让店里收购/回收、009501/009629 去语气词），
 > 全库 4,459 个同 src 族译文 100% 一致，繁体/异体字 0 残留。详见
 > [CHANGELOG.md](CHANGELOG.md) v0.8.4。
 
-当前基线镜像 `bof4_chinese_v16e.bin`（740,731,544 B，SHA256 eeada38a…）：
-v15 全量汉化（对话/剧情/4 套字库分页）+ v16e 系统文本回填（DEMO seg2 62 条译文 +
-SYSTEM 字库 V1 描边/V9 白芯打包 + INIT win0[9] 白化）。构建方法见下文
-「构建全量汉化镜像 (v15/v16e)」；v16 技术定案见
-[docs/v16_system_text_backfill.md](docs/v16_system_text_backfill.md) 与
-[CHANGELOG.md](CHANGELOG.md) v0.8.2。
+上一基线镜像 `bof4_chinese_v16e.bin`（740,054,168 B，SHA256 1c27a950…）：
+v15 全量汉化（对话/剧情/4 套字库分页，2,223 字，17,676 条）+ v16e 系统文本回填
+（DEMO seg2 62 条译文 + SYSTEM 字库 V1 描边/V9 白芯打包 + INIT win0[9] 白化）。
+基于 v0.8.4 全量精校定稿重建；v16 技术定案见
+[docs/v16_system_text_backfill.md](docs/v16_system_text_backfill.md)。
+
+**v17 开发镜像 `bof4_chinese_v17.bin`（740,047,112 B，SHA256 `29b0af55…`）**：
+删除全部 CLUT 数据改写（CLUT 段一律保留原版，修复 v16e 的场景背景调色板损坏）
++ **EXE 屏蔽式 CLUT 代码注入**（上传函数 `0x8013769C` 上传前改写工作区行 0/行 1
+→ 4 套字形不再叠影，且不影响背景/系统调色板）。构建脚本
+`tools/bof4_v17_build.py`；技术细节见
+[docs/clut_code_injection.md](docs/clut_code_injection.md) 与 [CHANGELOG.md](CHANGELOG.md) v0.8.17。
+**该版实测排查中（存在待解问题），暂不作为发布基线。** 构建方法见下文
+「构建全量汉化镜像 (v15/v16e)」。
 
 ## 字库容量问题（已解决：路径 E，4 套 CLUT 分页，v15 实施）
 
@@ -80,7 +88,7 @@ SYSTEM 字库 V1 描边/V9 白芯打包 + INIT win0[9] 白化）。构建方法�
 bof4-chinese/
 ├── README.md                    # 本文件
 ├── README_EN.md                 # 英文说明
-├── CHANGELOG.md                 # 变更日志 (v0.1~v0.8.2)
+├── CHANGELOG.md                 # 变更日志 (v0.1~v0.8.17)
 ├── LICENSE                      # MIT
 ├── translation_workbook.json    # 翻译工作簿 (17,676 条, 已含全量定稿译文)
 │
@@ -134,6 +142,7 @@ bof4-chinese/
 ├── docs/
 │   ├── cracking_analysis.md     # ★ 破解技术文档 (格式/编码/字库/容量, 含修正记录)
 │   ├── v16_system_text_backfill.md # ★ v16 系统文本回填技术定案 (seg2/CLUT/字形规范)
+│   ├── clut_code_injection.md  # ★ 屏蔽式 CLUT 代码注入方案 (文字 CLUT 全链路, v17)
 │   ├── translation_guide.md    # 翻译规范与术语基准
 │   ├── slps_reverse_engineering.md # SLPS 逆向报告 (字库加载路径)
 │   ├── font_source_experiment.md  # 字体来源实验记录
@@ -346,12 +355,15 @@ INIT seg1/3/4 win0[9] 白化 7FFF。详见
 
 1. **先读文档**：`docs/cracking_analysis.md`（格式/布局/容量事实）→
    `docs/clut_banking_design.md`（路径 E 架构）→
+   `docs/clut_code_injection.md`（文字 CLUT 全链路 + 屏蔽式 CLUT 代码注入，v17）→
    `docs/v16_system_text_backfill.md`（v16 系统文本技术定案）→ [CHANGELOG.md](CHANGELOG.md)
 2. **跑测试**：`python -m unittest discover -s tests` 确认环境正常（v0.8 起 53 项，含多页重组测试）
 3. **验证字库**：`dump_font.py` + `import_font.py` round-trip，确认布局理解正确
-4. **复现基线**：`tools/bof4_v16e_build.py` 构建 → `bof4_v16e_demo_verify.py` +
-   `bof4_v16e_full_verify.py` 双验证 → 与当前基线 SHA256 比对
-5. **继续 v16f**：回填 `texts/tsv/system_text/system_text_remaining_translated.tsv` 的
+4. **复现镜像**：`tools/bof4_v17_build.py`（删除 CLUT 数据改写 + EXE 屏蔽式 CLUT 注入，
+   构建日志应显示 `CLUT 段: 0` 与 `EXE 注入: 0x801376DC -> jal 0x801BB23C`）；
+   v16e 旧基线复现用 `tools/bof4_v16e_build.py` + `bof4_v16e_demo_verify.py` / `bof4_v16e_full_verify.py`
+5. **继续推进**：修复 v17 实测问题 → 阴影（描边）渲染器双绘；或回填
+   `texts/tsv/system_text/system_text_remaining_translated.tsv` 的
    1,138 条译文（需适配 COMMU03/SGAMEN/SHOP 非标准 seg2 表结构），或继续场景文字描边/
    VRAM 字体上传变换逆向（见 CHANGELOG v0.8.2 已知边界）
 6. **模拟器实测**：推荐 RetroArch (PCSX-ReArmed) / DuckStation

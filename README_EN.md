@@ -3,10 +3,10 @@ AIGC:
   ContentProducer: '001191110102MAD55U9H0F10002'
   ContentPropagator: '001191110102MAD55U9H0F10002'
   Label: '1'
-  ProduceID: 'c570ddf3-284e-46d1-afcb-7e187a8b8bb4'
-  PropagateID: 'c570ddf3-284e-46d1-afcb-7e187a8b8bb4'
-  ReservedCode1: 'c685f49a-d772-4e1a-99a5-ab0a93718909'
-  ReservedCode2: 'c685f49a-d772-4e1a-99a5-ab0a93718909'
+  ProduceID: '094f1f9d-d2a6-44a7-9012-c62ed285361b'
+  PropagateID: '094f1f9d-d2a6-44a7-9012-c62ed285361b'
+  ReservedCode1: '2ecf4330-4755-486d-b0af-e56fc2878d33'
+  ReservedCode2: '2ecf4330-4755-486d-b0af-e56fc2878d33'
 ---
 
 # Breath of Fire IV — Simplified Chinese Translation Project
@@ -18,7 +18,7 @@ AIGC:
 > This repository contains all translations, tools, and reverse-engineering docs
 > so that future contributors can fully reproduce the work.
 
-## Current Status (2026-09-22)
+## Current Status (2026-09-23)
 
 | Module | Status | Notes |
 |--------|--------|-------|
@@ -27,10 +27,10 @@ AIGC:
 | **Translation proofread** | ✅ **Fully complete** | **All 17,676 strings proofread batch-by-batch (v0.8.4): newlines / control codes / separators / same-text families / traditional chars all 0** |
 | Font layout RE | ✅ Done | 21-column grid + low-nibble-left (verified byte-by-byte against VRAM dumps) |
 | **Font capacity** | ✅ **Resolved** | 4-set 1bpp CLUT banking (Path E implemented; shipped in the v15 full build) |
-| **Full translated image** | ✅ **Built** | v15 full build (story/dialog) + v16e system-text backfill, tested in-game |
+| **Full translated image** | ⚠️ **v17 built, in-game verification ongoing** | v15/v16e had dialog ghosting + scene-palette issues; v17 switches to **masked-CLUT code injection** (all CLUT data rewrites removed); core goal under verification |
 | System text backfill | ✅ v16e | 62 save/load/settings/naming strings tested in-game; remaining 1,138 translated, backfill pending (v16f) |
 | Glyph pipeline | ✅ Done | XP SimSun 12px bitmap; outline = 8-neighborhood ring (corrected in v16e) |
-| Emulator test | ✅ Passed | v16e naming screen: white core + dark outline clearly readable; title/graphics no regression |
+| Emulator test | ⚠️ **In progress** | v17 image pending verification; savestate-level evidence confirmed the code injection rewrites VRAM row 240 correctly; issues under investigation |
 
 > **v0.8.4 proofread milestone**: all 17,676 strings fully proofread one by one, plus four
 > final rulings ("王女さま" titles unified to "Princess", 下取り family unified to "let the shop
@@ -38,13 +38,22 @@ AIGC:
 > families are 100% consistent; traditional/Japanese kanji residue: 0. See
 > [CHANGELOG.md](CHANGELOG.md) v0.8.4.
 
-Current baseline image `bof4_chinese_v16e.bin` (740,731,544 B, SHA256 eeada38a…):
-the v15 full localization (story/dialog, 4-set font banking) plus the v16e system-text
-backfill (62 translations in DEMO seg2 + SYSTEM font packed as V1 outline / V9 white core
-+ INIT win0[9] whitened). Build instructions under "Build the full image (v15/v16e)" below;
-the v16 technical findings are documented in
-[docs/v16_system_text_backfill.md](docs/v16_system_text_backfill.md) (Chinese) and
-[CHANGELOG.md](CHANGELOG.md) v0.8.2.
+Previous baseline `bof4_chinese_v16e.bin` (740,054,168 B, SHA256 1c27a950…):
+the v15 full localization (story/dialog, 4-set font banking, 2,223 glyphs, 17,676 strings)
+plus the v16e system-text backfill (62 translations in DEMO seg2 + SYSTEM font packed as
+V1 outline / V9 white core + INIT win0[9] whitened). Rebuilt from the v0.8.4 proofread
+final; the v16 technical findings are documented in
+[docs/v16_system_text_backfill.md](docs/v16_system_text_backfill.md) (Chinese).
+
+**v17 development image `bof4_chinese_v17.bin` (740,047,112 B, SHA256 `29b0af55…`)**:
+all CLUT data rewrites removed (CLUT segments kept pristine — fixes the scene-palette
+corruption of v16e) + **EXE masked-CLUT code injection** (before the palette upload
+routine `0x8013769C` uploads, the injected code rewrites workspace rows 0/1 so the
+4 glyph sets no longer ghost, without touching background/system palettes). Build
+script `tools/bof4_v17_build.py`; technical details in
+[docs/clut_code_injection.md](docs/clut_code_injection.md) and [CHANGELOG.md](CHANGELOG.md) v0.8.17.
+**In-game verification is ongoing (known open issues); not yet a release baseline.**
+Build instructions under "Build the full image (v15/v16e)" below.
 
 ## Font Capacity Problem (Resolved: Path E, 4-set CLUT banking, shipped in v15)
 
@@ -88,7 +97,7 @@ The capacity model must be redesigned. Feasible paths (by invasiveness):
 bof4-chinese/
 ├── README.md                    # Chinese readme (primary)
 ├── README_EN.md                 # This file
-├── CHANGELOG.md                 # v0.1 ~ v0.8.2 history
+├── CHANGELOG.md                 # v0.1 ~ v0.8.17 history
 ├── LICENSE                      # MIT
 ├── translation_workbook.json    # Translation workbook (17,676 entries, final translations)
 │
@@ -142,6 +151,7 @@ bof4-chinese/
 │   ├── cracking_analysis.md     # ★ Cracking technical document (formats/encoding/fonts/capacity)
 │   ├── v16_system_text_backfill.md # ★ v16 system-text backfill findings (seg2/CLUT/glyph spec)
 │   ├── clut_banking_design.md   # ★ Path E design doc (CLUT banking; static verification done)
+│   ├── clut_code_injection.md   # ★ Masked-CLUT code injection (text-CLUT full chain, v17)
 │   ├── translation_guide.md     # Translation spec and glossary baseline
 │   ├── slps_reverse_engineering.md # SLPS RE report (font loading path)
 │   ├── font_source_experiment.md   # Font source experiments
@@ -346,12 +356,16 @@ not found in any of the 297 font segments. **Its inherent characters are usable
 
 1. **Read the docs**: `docs/cracking_analysis.md` (format/layout/capacity facts, Chinese) →
    `docs/clut_banking_design.md` (Path E architecture, Chinese) →
+   `docs/clut_code_injection.md` (text-CLUT full chain + masked-CLUT code injection, v17, Chinese) →
    `docs/v16_system_text_backfill.md` (v16 findings, Chinese) → [CHANGELOG.md](CHANGELOG.md)
 2. **Run the tests**: `python -m unittest discover -s tests`
 3. **Verify the font**: `dump_font.py` + `import_font.py` round-trip
-4. **Reproduce the baseline**: `tools/bof4_v16e_build.py` → `bof4_v16e_demo_verify.py` +
-   `bof4_v16e_full_verify.py` → compare SHA256 against the current baseline
-5. **Continue with v16f**: backfill the 1,138 translated strings in
+4. **Reproduce the image**: `tools/bof4_v17_build.py` (all CLUT data rewrites removed +
+   EXE masked-CLUT injection; the build log should show `CLUT 段: 0` and
+   `EXE 注入: 0x801376DC -> jal 0x801BB23C`); for the older v16e baseline use
+   `tools/bof4_v16e_build.py` + `bof4_v16e_demo_verify.py` / `bof4_v16e_full_verify.py`
+5. **Next steps**: fix the open v17 in-game issues → glyph shadow (outline) via
+   renderer double-draw; or backfill the 1,138 translated strings in
    `texts/tsv/system_text/system_text_remaining_translated.tsv`
    (requires adapting the non-standard seg2 tables of COMMU03/SGAMEN/SHOP), or continue with
    scene-text outlines / VRAM font-upload transform RE (see CHANGELOG v0.8.2 known limits)

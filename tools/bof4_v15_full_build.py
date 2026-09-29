@@ -371,33 +371,37 @@ def encode_v15(text, fname, gsets, scene, main_slot):
 # 5. CLUT 改写
 # ============================================================
 
-def rewrite_clut(orig_512):
-    """512B=16 窗口 -> 4 套语义 (原版渐变保留, 套位改主色/白)。"""
-    w = bytearray(orig_512)
-    def getw(k, j):
-        return struct.unpack_from("<H", w, k * 32 + j * 2)[0]
+def rewrite_clut(orig_data):
+    """任意大小 CLUT 段 -> 4 套语义。
+    只改写前 16 个窗口 (win0-15) = 512 字节；超出部分(背景/图形调色板)原样保留。
+    每个窗口只让对应套 bit=1 的索引可见(白色)，其他一律清零(透明)。
+    这样 4 套字形叠加在同一个 4bpp glyph 中时，CLUT 只显示当前套的笔画，
+    不会出现其他套的叠影。"""
+    w = bytearray(orig_data)
     def setw(k, j, v):
-        struct.pack_into("<H", w, k * 32 + j * 2, v)
-    # win0: 套 0 位 (奇数 j) -> 白; 偶数保留原版 (ASCII 渐变)
+        off = k * 32 + j * 2
+        if off + 2 <= len(w):
+            struct.pack_into("<H", w, off, v)
+
+    # win0: bit0=1 -> 白; bit0=0 -> 透明(清零)
     for j in range(16):
-        if j & 1:
-            setw(0, j, WHITE)
-    # win1-3: 原版保留 + 套位 (j 含 bit k) -> 该窗口原版主色 [1]
+        setw(0, j, WHITE if (j & 1) else 0)
+
+    # win1-3: bit{k}=1 -> 白; bit{k}=0 -> 透明(清零)
     for k in (1, 2, 3):
-        main = getw(k, 1)
         for j in range(16):
-            if (j >> k) & 1 and getw(k, j) == 0:
-                setw(k, j, main if main else WHITE)
-    # win4-8,A,D: 套 0 位 (奇数 j) 若原版 0 -> 主色
+            setw(k, j, WHITE if ((j >> k) & 1) else 0)
+
+    # win4-8,A,D: 套0 语义(原生色码窗口), 同 win0
     for k in (4, 5, 6, 7, 8, 0xA, 0xD):
-        main = getw(k, 1)
         for j in range(16):
-            if j & 1 and getw(k, j) == 0:
-                setw(k, j, main if main else WHITE)
-    # win9/B/C: 纯套白窗口 (我们的切换窗口, ASCII 不进)
+            setw(k, j, WHITE if (j & 1) else 0)
+
+    # win9/B/C: 套1/2/3 切换窗口, 只显示对应套
     for k, s in ((9, 1), (0xB, 2), (0xC, 3)):
         for j in range(16):
-            setw(k, j, WHITE if (j >> s) & 1 else 0)
+            setw(k, j, WHITE if ((j >> s) & 1) else 0)
+
     return bytes(w)
 
 # ============================================================
@@ -583,12 +587,15 @@ def main():
         seg_final = {}       # seg_index -> 最终数据 (本文件全部修改)
         has_overflow = False
 
-        # CLUT 段 (512B, sig=0x8002xxxx 主表条目)
-        for seg in parsed["segments"]:
-            sig = seg["sig"]
-            if 0x8002E000 <= sig <= 0x8004E000 and seg["size"] == 512:
-                seg_final[seg["index"]] = rewrite_clut(seg["data"])
-                n_clut += 1
+        # CLUT 段 (sig=0x8002xxxx-0x8004xxxx, 任意大小)
+        # v0.8.7: 仅 WORLD 文件改写 (剧情对话 4 套分离);
+        #         SYSTEM 文件保留原版 (INIT CLUT 全改写导致标题/命名画面崩溃 — 实测)
+        if name.startswith("WORLD/"):
+            for seg in parsed["segments"]:
+                sig = seg["sig"]
+                if 0x8002E000 <= sig <= 0x8004E000:
+                    seg_final[seg["index"]] = rewrite_clut(seg["data"])
+                    n_clut += 1
 
         # 字库段 (sig=0x1C000200)
         fsegs = find_font_segments(parsed)

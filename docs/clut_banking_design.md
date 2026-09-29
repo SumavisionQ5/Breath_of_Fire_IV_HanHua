@@ -3,16 +3,23 @@ AIGC:
   ContentProducer: '001191110102MAD55U9H0F10002'
   ContentPropagator: '001191110102MAD55U9H0F10002'
   Label: '1'
-  ProduceID: '8be127e4-3956-4608-b7d5-7496808550eb'
-  PropagateID: '8be127e4-3956-4608-b7d5-7496808550eb'
-  ReservedCode1: 'f42ef84d-a180-43da-9705-fe3a258281e3'
-  ReservedCode2: 'f42ef84d-a180-43da-9705-fe3a258281e3'
+  ProduceID: 'c0b77a1c-f824-473b-99cc-70a58cf54e9f'
+  PropagateID: 'c0b77a1c-f824-473b-99cc-70a58cf54e9f'
+  ReservedCode1: 'db5819d5-d87c-43b9-b1e4-9a337d1694ee'
+  ReservedCode2: 'db5819d5-d87c-43b9-b1e4-9a337d1694ee'
 ---
 
 # 路径 E 设计文档 — 多套字形共享像素（CLUT 分页）扩容方案
 
 > 状态: 静态验证完成 + **v13 原型镜像已构建 (2026-09-18), 待模拟器实测**
 > 前置阅读: `cracking_analysis.md` (字库布局/编码规则/容量实测)
+>
+> **方案演进提示（2026-09-23）**：本文的"4 套字形共享像素"思路仍有效，但
+> **CLUT 的实现方式已从"改写 CLUT 段数据"改为"在文字调色板上传函数内注入代码"**
+> （原因：CLUT 段数据是背景与文字共享池，改数据必破坏背景；且 VRAM 现值为每帧
+> 运行时重写）。现行方案与完整链路见
+> [`clut_code_injection.md`](clut_code_injection.md)；镜像实现见
+> `tools/bof4_v17_build.py`、`CHANGELOG.md` v0.8.17。
 
 ---
 
